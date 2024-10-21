@@ -45,6 +45,15 @@ app.get('/entrarSala', async (req, res) => {
 	}
 });
 
+app.get('/palabrasObtener', async (req, res) => {
+	try {
+		const results = await db.query('SELECT * FROM palabras2');
+		res.json(results);
+	} catch (err) {
+		res.status(500).send(err);
+	}
+});
+
 io.on('connection', (socket) => {
     socket.on('unirseSala', (codigoSala) => {
         socket.join(codigoSala);

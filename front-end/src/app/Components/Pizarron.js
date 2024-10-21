@@ -34,7 +34,6 @@ export default function PizarronCanvas() {
     const dibuja = (e) => {
         if (!dibujar) return;
         if (context) {
-            // Cambia el color a blanco si se usa la goma
             context.strokeStyle = isEraser ? "white" : currentStyle.color;
             context.lineWidth = isEraser ? lineWidth * 2 : currentStyle.lineWidth; // Goma más ancha
             context.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
