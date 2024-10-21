@@ -1,0 +1,76 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px; /* Menos espacio en los bordes */
+    min-height: 100vh;
+    background-color: #e9f5ff; /* Fondo suave y claro */
+}
+
+.wordSection {
+    margin-top: 5px; /* Reducido el margen superior */
+    text-align: center;
+    background-color: #ffffff; /* Fondo blanco para el área de la palabra */
+    border-radius: 10px;
+    padding: 10px; /* Ajustado el padding */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra más sutil */
+}
+
+.title {
+    font-size: 20px; /* Tamaño de fuente ajustado */
+    font-weight: bold;
+    color: #333; /* Color del texto más oscuro */
+}
+
+.word {
+    font-size: 16px; /* Tamaño de fuente reducido */
+    margin: 5px 0; /* Menos margen */
+    color: #2c3e50; /* Color más atractivo */
+    font-style: italic; /* Estilo cursivo */
+}
+
+.timer {
+    font-size: 14px; /* Tamaño de fuente ajustado */
+    color: #d9534f; /* Color rojo para el temporizador */
+    font-weight: bold; /* Negrita */
+}
+
+.header {
+    font-size: 28px; /* Tamaño de fuente ajustado */
+    font-weight: bold;
+    margin-bottom: 5px; /* Reducido el margen inferior */
+    color: #007bff; /* Color azul claro */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* Sombra de texto */
+}
+
+.flexContainer {
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* Espacio entre componentes reducido */
+    margin-top: 10px; /* Menos espacio superior */
+    width: 100%; /* Asegura que ocupe el ancho total */
+    max-width: 900px; /* Limita el ancho máximo para diseño responsivo */
+}
+
+/* Ajuste del tamaño del pizarrón */
+.pizarronCanvas {
+    width: 80%; /* Ajustar el ancho del pizarrón */
+    max-width: 600px; /* Ancho máximo del pizarrón */
+    height: 300px; /* Ajustar la altura del pizarrón */
+    border: 1px solid #ccc; /* Bordes para el pizarrón */
+}
+
+@media (max-height: 600px) {
+    .header {
+        font-size: 24px; /* Ajusta el tamaño en pantallas más pequeñas */
+    }
+    .title {
+        font-size: 18px;
+    }
+    .word {
+        font-size: 14px;
+    }
+    .timer {
+        font-size: 12px;
+    }
+}

@@ -1,5 +1,6 @@
 "use client";
 import React, { useRef, useEffect, useState } from "react";
+import styles from './PizarronCanvas.module.css'; // Asegúrate de crear este archivo
 
 export default function PizarronCanvas() {
     const canvasRef = useRef(null);
@@ -10,7 +11,7 @@ export default function PizarronCanvas() {
     const [accionesDibujar, setAccionesDibujar] = useState([]);
     const [currentPath, setCurrentPath] = useState([]);
     const [currentStyle, setCurrentStyle] = useState({ color: "black", lineWidth: 3 });
-    const [isEraser, setIsEraser] = useState(false); // Estado para la goma de borrar
+    const [isEraser, setIsEraser] = useState(false);
 
     useEffect(() => {
         if (canvasRef.current) {
@@ -35,7 +36,7 @@ export default function PizarronCanvas() {
         if (!dibujar) return;
         if (context) {
             context.strokeStyle = isEraser ? "white" : currentStyle.color;
-            context.lineWidth = isEraser ? lineWidth * 2 : currentStyle.lineWidth; // Goma más ancha
+            context.lineWidth = isEraser ? lineWidth * 2 : currentStyle.lineWidth;
             context.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
             context.stroke();
             setCurrentPath([...currentPath, { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
@@ -96,67 +97,61 @@ export default function PizarronCanvas() {
     const colores = ["black", "red", "green", "blue", "yellow", "purple", "orange", "pink"];
 
     return (
-        <div>
+        <div className={styles.container}>
             <canvas
                 ref={canvasRef}
                 onMouseDown={empezarDibujar}
                 onMouseMove={dibuja}
                 onMouseUp={terminarDibujar}
                 onMouseOut={terminarDibujar}
-                className="border border-gray"
+                className={styles.canvas}
             />
-            <div className="flex my-4">
+            <div className={styles.controls}>
                 {colores.map(color => (
                     <button
                         key={color}
                         onClick={() => {
-                            setIsEraser(false); // Desactiva la goma al seleccionar un color
+                            setIsEraser(false);
                             changeColor(color);
                         }}
-                        style={{ backgroundColor: color, width: '40px', height: '40px', marginRight: '5px', border: 'none', cursor: 'pointer' }}
+                        className={styles.colorButton}
+                        style={{ backgroundColor: color }}
                     />
                 ))}
                 <input
                     type="color"
                     value={currentColor}
                     onChange={(e) => {
-                        setIsEraser(false); // Desactiva la goma al seleccionar un color
+                        setIsEraser(false);
                         changeColor(e.target.value);
                     }}
-                    className="border border-gray-300 rounded"
+                    className={styles.colorInput}
                 />
-                <div className="flex-grow" />
                 <input
                     type="range"
                     min="1"
                     max="10"
                     value={lineWidth}
                     onChange={(e) => changeWidth(e.target.value)}
+                    className={styles.rangeInput}
                 />
                 <button
                     onClick={() => {
-                        setIsEraser(!isEraser); // Alterna el estado de la goma
+                        setIsEraser(!isEraser);
                         if (!isEraser) {
-                            setCurrentColor("white"); // Cambia el color a blanco si se activa la goma
+                            setCurrentColor("white");
                         }
                     }}
-                    style={{
-                        backgroundColor: isEraser ? "gray" : "lightgray",
-                        color: "black",
-                        padding: '10px',
-                        marginLeft: '10px',
-                        border: 'none',
-                        cursor: 'pointer'
-                    }}
+                    className={styles.eraserButton}
                 >
                     {isEraser ? "Usar lápiz" : "Usar goma"}
                 </button>
             </div>
-            <div className="flex justify-center my-4">
-                <button className="bg-blue-500 text-white px-4 py-2 mr-2" onClick={undoDibujo}>
+            <div className={styles.actionButtons}>
+                <button className={styles.undoButton} onClick={undoDibujo}>
                     Undo
                 </button>
-                <button className="bg-red-500 text-white px-4 py-2" onClick={limpiarDibujo}>
+                <button className={styles.clearButton} onClick={limpiarDibujo}>
                     Clear
                 </button>
             </div>
