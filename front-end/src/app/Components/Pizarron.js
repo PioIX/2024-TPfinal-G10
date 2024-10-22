@@ -67,12 +67,21 @@ export default function PizarronCanvas() {
             const newAcciones = [...accionesDibujar];
             newAcciones.pop();
             setAccionesDibujar(newAcciones);
-
             const newContext = canvasRef.current.getContext("2d");
             newContext.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            dataAnterior(newContext);
+            newAcciones.forEach(({ path, style }) => {
+                newContext.beginPath();
+                newContext.strokeStyle = style.color;
+                newContext.lineWidth = style.lineWidth;
+                newContext.moveTo(path[0].x, path[0].y);
+                path.forEach((point) => {
+                    newContext.lineTo(point.x, point.y);
+                });
+                newContext.stroke();
+            });
         }
     };
+    
 
     const limpiarDibujo = () => {
         setAccionesDibujar([]);

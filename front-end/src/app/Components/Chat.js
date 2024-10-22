@@ -1,9 +1,10 @@
-import React from 'react';
-import styles from './chat.module.css'; // Asegúrate de que el archivo CSS esté vinculado
+import React, { useEffect, useRef } from 'react';
+import styles from './chat.module.css'; 
 
 const Chat = () => {
     const [messages, setMessages] = React.useState([]);
     const [input, setInput] = React.useState("");
+    const messageEndRef = useRef(null); 
 
     const sendMessage = () => {
         if (input.trim()) {
@@ -11,9 +12,20 @@ const Chat = () => {
                 ...prevMessages,
                 { text: input, sender: 'user' }
             ]);
-            setInput(""); 
+            setInput("");
         }
     };
+    const handleKeyPress = (e) => {
+        if (e.key === "Enter") {
+            sendMessage();
+        }
+    };
+
+    useEffect(() => {
+        if (messageEndRef.current) {
+            messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages]);
 
     return (
         <div className={styles.chatContainer}>
@@ -23,6 +35,7 @@ const Chat = () => {
                         {msg.text}
                     </div>
                 ))}
+                <div ref={messageEndRef} /> 
             </div>
             <div className={styles.inputContainer}>
                 <input
@@ -30,6 +43,7 @@ const Chat = () => {
                     className={styles.inputField}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyPress}
                     placeholder="Escribe un mensaje..."
                 />
                 <button className={styles.sendButton} onClick={sendMessage}>Enviar</button>

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import PizarronCanvas from "../Components/Pizarron";
 import Chat from "../Components/Chat";
-import styles from './page.module.css'; // Asegúrate de crear este archivo
+import styles from './page.module.css'; 
 
 export default function Home() {
     const [palabras, setPalabras] = useState([]);
@@ -47,18 +47,20 @@ export default function Home() {
         return () => clearInterval(intervalId);
     }, [palabras]);
 
+    const timerClass = segundos <= 10 ? styles.timerRed : styles.timerBlack;
+
     return (
         <main className={styles.container}>
             <div className={styles.wordSection}>
                 <p className={styles.word}>{palabraActual}</p>
-                <h3 className={styles.timer}>{segundos} segundos</h3>
+                <h3 className={timerClass}>{segundos} segundos</h3>
             </div>
             <div className={styles.flexContainer}>
-            <div>
-                <PizarronCanvas />
-            </div>
-            <div>
-                <Chat />
+                <div class="pizarronContainer">
+                    <PizarronCanvas />
+                </div>
+                <div class="chatContainer">
+                    <Chat />
                 </div>
             </div>
         </main>

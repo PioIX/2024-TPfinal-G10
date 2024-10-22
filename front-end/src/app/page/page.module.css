@@ -2,10 +2,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #f0f8ff; /* Color de fondo suave */
+    background-color: rgba(253,249,237,255); 
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 10px hsl(0, 0%, 0%)
 }
 
 .wordSection {
@@ -13,22 +13,38 @@
     text-align: center;
 }
 
+.mainContainer {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    padding: 10px;
+}
+
+
 .word {
     font-size: 2rem;
     font-weight: bold;
-    color: #4a90e2; /* Color atractivo para la palabra */
+    color: hsl(0, 0%, 0%);
 }
 
-.timer {
+.timerBlack {
     font-size: 20px;
-    color: #d9534f; /* Color rojo para el temporizador */
+    color: black;
+    font-weight: bold;
 }
+
+.timerRed {
+    font-size: 20px;
+    color: red;
+    font-weight: bold;
+}
+
 
 .flexContainer {
     display: flex;
     justify-content: space-around;
     width: 100%;
-    max-width: 1200px; /* Limita el ancho máximo */
+    max-width: 1200px; 
 }
 
 @media (max-width: 768px) {
