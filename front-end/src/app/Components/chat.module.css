@@ -12,6 +12,13 @@
     min-height: 100px; 
     margin-top: 10px;
 }
+.casiMessage {
+    color: rgb(235, 177, 20);
+}
+
+.correctMessage {
+    color: green;
+}
 
 .messageList {
     max-height: 500px; 

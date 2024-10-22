@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from './PizarronCanvas.module.css'; // Asegúrate de crear este archivo
 
-export default function PizarronCanvas() {
+export default function PizarronCanvas({ clearCanvas }) {
     const canvasRef = useRef(null);
     const [context, setContext] = useState(null);
     const [dibujar, setDibujar] = useState(false);
@@ -23,6 +23,12 @@ export default function PizarronCanvas() {
             dataAnterior(ctx);
         }
     }, []);
+
+    useEffect(() => {
+        if (clearCanvas) {
+            limpiarDibujo(); // Limpiar el pizarrón cuando clearCanvas sea true
+        }
+    }, [clearCanvas]);
 
     const empezarDibujar = (e) => {
         if (context) {
@@ -81,7 +87,6 @@ export default function PizarronCanvas() {
             });
         }
     };
-    
 
     const limpiarDibujo = () => {
         setAccionesDibujar([]);

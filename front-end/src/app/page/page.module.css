@@ -2,10 +2,27 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: rgba(253,249,237,255); 
+    background-color: rgba(253, 249, 237, 255);
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 4px 10px hsl(0, 0%, 0%)
+    box-shadow: 0 4px 10px hsl(0, 0%, 0%);
+    width: 100%;
+    min-height: 100vh;
+    position: relative; /* Añadido para el posicionamiento del banner */
+}
+
+.messageBanner {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 20px; /* Aumenta el padding para que se vea mejor */
+    border-radius: 5px;
+    text-align: center;
+    position: fixed; /* Cambia a fixed para que esté en toda la pantalla */
+    top: 0; /* Ajusta a la parte superior */
+    left: 0; /* Comienza desde el borde izquierdo */
+    width: 100vw; /* Abarca toda la anchura de la pantalla */
+    z-index: 100; /* Asegúrate de que esté encima de otros elementos */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Añade sombra para darle profundidad */
 }
 
 .wordSection {
@@ -14,12 +31,11 @@
 }
 
 .mainContainer {
-    display: flex; 
-    justify-content: space-between; 
-    align-items: flex-start; 
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     padding: 10px;
 }
-
 
 .word {
     font-size: 2rem;
@@ -39,12 +55,11 @@
     font-weight: bold;
 }
 
-
 .flexContainer {
     display: flex;
     justify-content: space-around;
     width: 100%;
-    max-width: 1200px; 
+    max-width: 1200px;
 }
 
 @media (max-width: 768px) {
