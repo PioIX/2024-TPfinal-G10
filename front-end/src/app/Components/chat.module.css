@@ -1,0 +1,56 @@
+.chatContainer {
+    background-color: #ffffff; /* Fondo blanco para el chat */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    max-width: 400px; /* Limitar el ancho del chat */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.messageList {
+    max-height: 300px; /* Altura máxima del área de mensajes */
+    overflow-y: auto; /* Agregar scroll si es necesario */
+    margin-bottom: 10px;
+}
+
+.message {
+    padding: 10px;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+.userMessage {
+    background-color: #e7f3ff; /* Color claro para mensajes de usuario */
+    align-self: flex-end; /* Alinear a la derecha */
+}
+
+.botMessage {
+    background-color: #f1f1f1; /* Color claro para mensajes del bot */
+    align-self: flex-start; /* Alinear a la izquierda */
+}
+
+.inputContainer {
+    display: flex;
+    align-items: center;
+}
+
+.inputField {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.sendButton {
+    background-color: #4a90e2; /* Botón azul */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+.sendButton:hover {
+    background-color: #357abd; /* Color más oscuro al pasar el mouse */
+}

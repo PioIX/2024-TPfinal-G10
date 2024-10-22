@@ -1,40 +1,41 @@
-"use client";
-import React, { useState } from "react";
+import React from 'react';
+import styles from './chat.module.css'; // Asegúrate de que el archivo CSS esté vinculado
 
-export default function Chat() {
-    const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState("");
+const Chat = () => {
+    const [messages, setMessages] = React.useState([]);
+    const [input, setInput] = React.useState("");
 
-    const sendMessage = (e) => {
-        e.preventDefault();
+    const sendMessage = () => {
         if (input.trim()) {
-            setMessages([...messages, input]);
-            setInput("");
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                { text: input, sender: 'user' }
+            ]);
+            setInput(""); 
         }
     };
 
     return (
-        <div className="flex flex-col border border-gray-300 p-4 w-80 h-full">
-            <h2 className="text-lg font-bold mb-2">Chat</h2>
-            <div className="flex-grow overflow-y-auto mb-2">
+        <div className={styles.chatContainer}>
+            <div className={styles.messageList}>
                 {messages.map((msg, index) => (
-                    <div key={index} className="p-1 border-b">
-                        {msg}
+                    <div key={index} className={`${styles.message} ${msg.sender === 'user' ? styles.userMessage : styles.botMessage}`}>
+                        {msg.text}
                     </div>
                 ))}
             </div>
-            <form onSubmit={sendMessage} className="flex">
+            <div className={styles.inputContainer}>
                 <input
                     type="text"
+                    className={styles.inputField}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    className="flex-grow border border-gray-300 p-2 rounded"
                     placeholder="Escribe un mensaje..."
                 />
-                <button type="submit" className="ml-2 bg-blue-500 text-white p-2 rounded">
-                    Enviar
-                </button>
-            </form>
+                <button className={styles.sendButton} onClick={sendMessage}>Enviar</button>
+            </div>
         </div>
     );
-}
+};
+
+export default Chat;

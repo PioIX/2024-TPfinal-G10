@@ -54,8 +54,12 @@ export default function Home() {
                 <h3 className={styles.timer}>{segundos} segundos</h3>
             </div>
             <div className={styles.flexContainer}>
+            <div>
                 <PizarronCanvas />
+            </div>
+            <div>
                 <Chat />
+                </div>
             </div>
         </main>
     );

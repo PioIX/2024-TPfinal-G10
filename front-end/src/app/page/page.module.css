@@ -2,75 +2,38 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px; /* Menos espacio en los bordes */
-    min-height: 100vh;
-    background-color: #e9f5ff; /* Fondo suave y claro */
+    background-color: #f0f8ff; /* Color de fondo suave */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .wordSection {
-    margin-top: 5px; /* Reducido el margen superior */
+    margin-bottom: 10px;
     text-align: center;
-    background-color: #ffffff; /* Fondo blanco para el área de la palabra */
-    border-radius: 10px;
-    padding: 10px; /* Ajustado el padding */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra más sutil */
-}
-
-.title {
-    font-size: 20px; /* Tamaño de fuente ajustado */
-    font-weight: bold;
-    color: #333; /* Color del texto más oscuro */
 }
 
 .word {
-    font-size: 16px; /* Tamaño de fuente reducido */
-    margin: 5px 0; /* Menos margen */
-    color: #2c3e50; /* Color más atractivo */
-    font-style: italic; /* Estilo cursivo */
+    font-size: 2rem;
+    font-weight: bold;
+    color: #4a90e2; /* Color atractivo para la palabra */
 }
 
 .timer {
-    font-size: 14px; /* Tamaño de fuente ajustado */
+    font-size: 20px;
     color: #d9534f; /* Color rojo para el temporizador */
-    font-weight: bold; /* Negrita */
-}
-
-.header {
-    font-size: 28px; /* Tamaño de fuente ajustado */
-    font-weight: bold;
-    margin-bottom: 5px; /* Reducido el margen inferior */
-    color: #007bff; /* Color azul claro */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* Sombra de texto */
 }
 
 .flexContainer {
     display: flex;
-    justify-content: center;
-    gap: 10px; /* Espacio entre componentes reducido */
-    margin-top: 10px; /* Menos espacio superior */
-    width: 100%; /* Asegura que ocupe el ancho total */
-    max-width: 900px; /* Limita el ancho máximo para diseño responsivo */
+    justify-content: space-around;
+    width: 100%;
+    max-width: 1200px; /* Limita el ancho máximo */
 }
 
-/* Ajuste del tamaño del pizarrón */
-.pizarronCanvas {
-    width: 80%; /* Ajustar el ancho del pizarrón */
-    max-width: 600px; /* Ancho máximo del pizarrón */
-    height: 300px; /* Ajustar la altura del pizarrón */
-    border: 1px solid #ccc; /* Bordes para el pizarrón */
-}
-
-@media (max-height: 600px) {
-    .header {
-        font-size: 24px; /* Ajusta el tamaño en pantallas más pequeñas */
-    }
-    .title {
-        font-size: 18px;
-    }
-    .word {
-        font-size: 14px;
-    }
-    .timer {
-        font-size: 12px;
+@media (max-width: 768px) {
+    .flexContainer {
+        flex-direction: column;
+        align-items: center;
     }
 }
