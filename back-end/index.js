@@ -17,7 +17,7 @@ const server = app.listen(LISTEN_PORT, () => {
 
 const io = require('socket.io')(server, {
 	cors: {
-		origin: "http://localhost:3000",
+		origin: ["http://localhost:3000", "http://localhost:3001"],
 		methods: ["GET", "POST", "PUT", "DELETE"],
 		credentials: true
 	}
@@ -45,18 +45,25 @@ app.get('/entrarSala', async (req, res) => {
 	}
 });
 
+io.on('connection', (socket) => {
+    socket.on('unirseSala', (codigoSala) => {
+        socket.join(codigoSala);
+        socket.to(codigoSala).emit('nuevoUsuario', 'Un nuevo usuario se ha unido a la sala: ' + codigoSala);
+    });
+});
 
-app.post('/crearSala', async (req, res) => {
+
+app.post('/crearSala', async (req, res) => { 
 	const { codigo, cantidad_personas } = req.body;
 	try {
 		const results = await db.query(
-			`INSERT INTO salas (codigo, cantidad_personas) 
-		 	VALUES ($1, $2)`, [codigo, cantidad_personas]
+			`INSERT INTO salas (codigo, cantidad_personas) VALUES ('${codigo}', ${cantidad_personas})`
 		);
 	} catch (err) {
 		res.status(500).send(err);
 	}
 });
+
 
 
 app.post('/sendMessage', async (req, res) => {
@@ -136,7 +143,7 @@ app.delete('/login', (req, res) => {
 	res.send(null);
 });
 
-io.on("connection", (socket) => {
+io.on("a", (socket) => {
 	const req = socket.request;
 
 	socket.on('joinRoom', data => {

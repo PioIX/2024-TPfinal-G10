@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import styles from './page.module.css'; 
 
 const GameRoom = () => {
   const [gameCode, setGameCode] = useState('');
   const [error, setError] = useState('');
-  const [gameCode2, setGameCode2] = useState('');
-  const [validCodes, setValidCodes] = useState([]); 
+  const [validCodes, setValidCodes] = useState([]);
+  const [maxPlayers, setMaxPlayers] = useState('');
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -19,12 +20,13 @@ const GameRoom = () => {
       }
     };
     fetchRooms();
-  }, []);
+  }, []); 
 
   const handleJoinGame = async (event) => {
     event.preventDefault();
     if (validCodes.includes(gameCode)) {
       console.log('Unido a la sala con código:', gameCode);
+      window.location.href = "http://localhost:3000/page"; 
       setError('');
     } else {
       setError('Código del juego no válido.');
@@ -33,66 +35,99 @@ const GameRoom = () => {
 
   const handleCreateGame = async (event) => {
     event.preventDefault();
-    if (gameCode2) {
+
+    if (validCodes.includes(gameCode)) {
+      setError('El código de la sala ya existe. Por favor, elige otro.');
+      return;
+    }
+
+    if (maxPlayers <= 1) {
+      setError('El número máximo de jugadores debe ser mayor que 1.');
+      return;
+    }
+
+    if (gameCode && maxPlayers) {
       try {
         const response = await fetch('http://localhost:4000/crearSala', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ codigo: gameCode2, cantidad_personas: 4 }), 
+          body: JSON.stringify({ codigo: gameCode, cantidad_personas: parseInt(maxPlayers) }),
         });
 
         if (!response.ok) {
           throw new Error('Error al crear la sala');
         }
-        setGameCode2('');
+        setGameCode('');
+        setMaxPlayers('');
+        document.getElementById('createGameModal').close(); 
         setError('');
+        window.location.href = "http://localhost:3000/page"; 
       } catch (err) {
         setError('Error al crear la sala.');
         console.error('Error:', err);
       }
     } else {
-      setError('Por favor, ingrese un nombre y un código para el juego.');
+      setError('Por favor, ingrese un código y un número de jugadores.');
     }
   };
 
   return (
-    <div>
-      <h2>Unirse a un Juego</h2>
-      <form onSubmit={handleJoinGame}>
-        <label htmlFor="gameCode">Código del Juego</label>
-        <input
-          type="text"
-          id="gameCode"
-          value={gameCode}
-          onChange={(e) => {
-            setGameCode(e.target.value);
-            setError('');
-          }}
-          required
-        />
-        <button type="submit">Unirse</button>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </form>
-
-      <h2>Crear un Juego</h2>
-      <form onSubmit={handleCreateGame}>
-        <label htmlFor="newGameCode">Código del Juego</label>
-        <input
-          type="text"
-          id="newGameCode"
-          value={gameCode2}
-          onChange={(e) => {
-            setGameCode2(e.target.value);
-            setError('');
-          }}
-          required
-        />
-        <button type="submit">Crear Juego</button>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      
-      </form>
+    <div className={styles.container}>
+      <h2 className={styles.title}>ArtAttack</h2>
+      <div className={styles.form}>
+        <form onSubmit={handleJoinGame}>
+          <label htmlFor="gameCode" className={styles.label}>Código del Juego</label>
+          <input
+            type="text"
+            id="gameCode"
+            value={gameCode}
+            onChange={(e) => {
+              setGameCode(e.target.value);
+              setError('');
+            }}
+            required
+            className={styles.input}
+          />
+          <button type="submit" className={styles.button}>Unirse</button>
+          {error && <p className={styles.error}>{error}</p>}
+        </form>
+        <button className={styles.button} onClick={() => document.getElementById('createGameModal').showModal()}>Crear Juego</button>
+      </div>
+      <dialog id="createGameModal" className={styles.modal}>
+        <form onSubmit={handleCreateGame}>
+          <label htmlFor="newGameCode" className={styles.label}>Código del Juego</label>
+          <input
+            type="text"
+            id="newGameCode"
+            value={gameCode}
+            onChange={(e) => {
+              setGameCode(e.target.value);
+              setError('');
+            }}
+            required
+            className={styles.input}
+          />
+          <label htmlFor="maxPlayers" className={styles.label}>Máx. Jugadores</label>
+          <input
+            type="number"
+            id="maxPlayers"
+            value={maxPlayers}
+            onChange={(e) => {
+              setMaxPlayers(e.target.value);
+              setError('');
+            }}
+            required
+            className={styles.input}
+          />
+          <div className={styles.dialogButtonsContainer}>
+            <button type="submit" className={styles.dialogButton}>Crear Juego</button>
+            <button type="button" className={styles.dialogButton} onClick={() => document.getElementById('createGameModal').close()}>Cancelar</button>
+          </div>
+        </form>
+        {error && <p className={styles.error}>{error}</p>}
+      </dialog>
     </div>
   );
 };
