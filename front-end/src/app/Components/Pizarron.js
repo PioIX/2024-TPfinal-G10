@@ -158,10 +158,10 @@ export default function PizarronCanvas() {
             </div>
             <div className={styles.actionButtons}>
                 <button className={styles.undoButton} onClick={undoDibujo}>
-                    Undo
+                    Volver
                 </button>
                 <button className={styles.clearButton} onClick={limpiarDibujo}>
-                    Clear
+                    Borrar
                 </button>
             </div>
         </div>
