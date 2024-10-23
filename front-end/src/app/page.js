@@ -1,10 +1,10 @@
-"use client";
+"use client"; 
 import React, { useState, useEffect } from 'react';
 import styles from './page.module.css'; 
-import Link from 'next/link';
 
 const GameRoom = () => {
   const [gameCode, setGameCode] = useState('');
+  const [userName, setUserName] = useState(''); // Estado para el nombre
   const [error, setError] = useState('');
   const [validCodes, setValidCodes] = useState([]);
   const [maxPlayers, setMaxPlayers] = useState('');
@@ -25,12 +25,28 @@ const GameRoom = () => {
 
   const handleJoinGame = async (event) => {
     event.preventDefault();
-    if (validCodes.includes(gameCode)) {
-      console.log('Unido a la sala con código:', gameCode);
-      window.location.href = "http://localhost:3000/page"; 
-      setError('');
+    
+    // Verificar si el código de juego y el nombre son válidos
+    if (validCodes.includes(gameCode) && userName.trim()) {
+      try {
+        // Guardar el nombre en la base de datos
+        await fetch('http://localhost:4000/guardarNombre', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ nombre: userName }),
+        });
+
+        console.log('Unido a la sala con código:', gameCode);
+        window.location.href = "http://localhost:3000/page"; 
+        setError('');
+      } catch (err) {
+        console.error('Error guardando nombre:', err);
+        setError('Error al unirse a la sala.');
+      }
     } else {
-      setError('Código del juego no válido.');
+      setError('Código del juego no válido o nombre vacío.');
     }
   };
 
@@ -78,27 +94,39 @@ const GameRoom = () => {
     <div className={styles.container}>
       <h2 className={styles.title}>ArtAttack</h2>
       <div className={styles.form}>
-      <form onSubmit={handleJoinGame} >
-        <label htmlFor="gameCode" className={styles.label}>Código del Juego</label>
-        <input
-          type="text"
-          id="gameCode"
-          value={gameCode}
-          onChange={(e) => {
-            setGameCode(e.target.value);
-            setError('');
-          }}
-          required
-          className={styles.input}
-        />
-        <button type="submit" className={styles.button}>Unirse</button>
-        {error && <p className={styles.error}>{error}</p>}
-      </form>
-      <button className={styles.button} onClick={() => document.getElementById('createGameModal').showModal()}>Crear Juego</button>
+        <form onSubmit={handleJoinGame}>
+          <label htmlFor="gameCode" className={styles.label}>Código del Juego</label>
+          <input
+            type="text"
+            id="gameCode"
+            value={gameCode}
+            onChange={(e) => {
+              setGameCode(e.target.value);
+              setError('');
+            }}
+            required
+            className={styles.input}
+          />
+          <label htmlFor="userName" className={styles.label}>Tu Nombre</label>
+          <input
+            type="text"
+            id="userName"
+            value={userName}
+            onChange={(e) => {
+              setUserName(e.target.value);
+              setError('');
+            }}
+            required
+            className={styles.input}
+          />
+          <button type="submit" className={styles.button}>Unirse</button>
+          {error && <p className={styles.error}>{error}</p>}
+        </form>
+        <button className={styles.button} onClick={() => document.getElementById('createGameModal').showModal()}>Crear Juego</button>
       </div>
       <dialog id="createGameModal" className={styles.modal}>
-        <form onSubmit={handleCreateGame} >
-          <label htmlFor="gameCode" className={styles.label}>Código del Juego</label>
+        <form onSubmit={handleCreateGame}>
+          <label htmlFor="newGameCode" className={styles.label}>Código del Juego</label>
           <input
             type="text"
             id="newGameCode"
@@ -122,7 +150,6 @@ const GameRoom = () => {
             required
             className={styles.input}
           />
-
           <div className={styles.dialogButtonsContainer}>
             <button type="submit" className={styles.dialogButton}>Crear Juego</button>
             <button type="button" className={styles.dialogButton} onClick={() => document.getElementById('createGameModal').close()}>Cancelar</button>
