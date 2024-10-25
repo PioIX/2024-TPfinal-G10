@@ -1,132 +1,175 @@
 "use client";
 import React, { useRef, useEffect, useState } from "react";
-import styles from './PizarronCanvas.module.css'; // Asegúrate de crear este archivo
+import styles from './PizarronCanvas.module.css';
 
 export default function PizarronCanvas({ clearCanvas }) {
     const canvasRef = useRef(null);
     const [context, setContext] = useState(null);
-    const [dibujar, setDibujar] = useState(false);
+    const [drawing, setDrawing] = useState(false);
     const [currentColor, setCurrentColor] = useState("black");
     const [lineWidth, setLineWidth] = useState(3);
-    const [accionesDibujar, setAccionesDibujar] = useState([]);
+    const [actions, setActions] = useState([]);
     const [currentPath, setCurrentPath] = useState([]);
-    const [currentStyle, setCurrentStyle] = useState({ color: "black", lineWidth: 3 });
     const [isEraser, setIsEraser] = useState(false);
 
     useEffect(() => {
-        if (canvasRef.current) {
-            const canvas = canvasRef.current;
-            canvas.width = 900;
-            canvas.height = 500;
-            const ctx = canvas.getContext("2d");
-            setContext(ctx);
-            dataAnterior(ctx);
-        }
+        const canvas = canvasRef.current;
+        canvas.width = 900;
+        canvas.height = 500;
+        const ctx = canvas.getContext("2d");
+        setContext(ctx);
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
     }, []);
 
     useEffect(() => {
         if (clearCanvas) {
-            limpiarDibujo(); // Limpiar el pizarrón cuando clearCanvas sea true
+            clearDrawing();
         }
     }, [clearCanvas]);
 
-    const empezarDibujar = (e) => {
+    const startDrawing = (e) => {
         if (context) {
             context.beginPath();
             context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-            setDibujar(true);
+            setDrawing(true);
+            setCurrentPath([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
         }
     };
 
-    const dibuja = (e) => {
-        if (!dibujar) return;
-        if (context) {
-            context.strokeStyle = isEraser ? "white" : currentStyle.color;
-            context.lineWidth = isEraser ? lineWidth * 2 : currentStyle.lineWidth;
-            context.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-            context.stroke();
-            setCurrentPath([...currentPath, { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
-        }
+    const draw = (e) => {
+        if (!drawing) return;
+        const x = e.nativeEvent.offsetX;
+        const y = e.nativeEvent.offsetY;
+        smoothDraw(context, x, y);
     };
 
-    const terminarDibujar = () => {
-        setDibujar(false);
-        context && context.closePath();
+    const smoothDraw = (ctx, x, y) => {
+        if (currentPath.length === 0) return;
+
+        const lastPoint = currentPath[currentPath.length - 1];
+
+        ctx.strokeStyle = isEraser ? "white" : currentColor;
+        ctx.lineWidth = isEraser ? lineWidth * 2 : lineWidth;
+
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.quadraticCurveTo(lastPoint.x, lastPoint.y, (lastPoint.x + x) / 2, (lastPoint.y + y) / 2);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        setCurrentPath((prev) => [...prev, { x, y }]);
+    };
+
+    const finishDrawing = () => {
+        setDrawing(false);
         if (currentPath.length > 0) {
-            setAccionesDibujar([...accionesDibujar, { path: currentPath, style: currentStyle }]);
+            setActions((prev) => [...prev, { path: currentPath, color: currentColor, lineWidth }]);
+            setCurrentPath([]);
         }
-        setCurrentPath([]);
+        context.closePath();
     };
 
-    const changeColor = (color) => {
-        setCurrentColor(color);
-        setCurrentStyle({ ...currentStyle, color });
-    };
-
-    const changeWidth = (width) => {
-        setLineWidth(width);
-        setCurrentStyle({ ...currentStyle, lineWidth: width });
-    };
-
-    const undoDibujo = () => {
-        if (accionesDibujar.length > 0) {
-            const newAcciones = [...accionesDibujar];
-            newAcciones.pop();
-            setAccionesDibujar(newAcciones);
-            const newContext = canvasRef.current.getContext("2d");
-            newContext.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            newAcciones.forEach(({ path, style }) => {
-                newContext.beginPath();
-                newContext.strokeStyle = style.color;
-                newContext.lineWidth = style.lineWidth;
-                newContext.moveTo(path[0].x, path[0].y);
-                path.forEach((point) => {
-                    newContext.lineTo(point.x, point.y);
-                });
-                newContext.stroke();
-            });
+    const undoDrawing = () => {
+        if (actions.length > 0) {
+            const newActions = [...actions];
+            newActions.pop();
+            setActions(newActions);
+            redrawCanvas(newActions);
         }
     };
 
-    const limpiarDibujo = () => {
-        setAccionesDibujar([]);
-        setCurrentPath([]);
-        const newContext = canvasRef.current.getContext("2d");
-        newContext.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    };
-
-    const dataAnterior = (ctx) => {
-        accionesDibujar.forEach(({ path, style }) => {
+    const redrawCanvas = (actions) => {
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        actions.forEach(({ path, color, lineWidth }) => {
             ctx.beginPath();
-            ctx.strokeStyle = style.color;
-            ctx.lineWidth = style.lineWidth;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
             ctx.moveTo(path[0].x, path[0].y);
-            path.forEach((point) => {
+            path.forEach(point => {
                 ctx.lineTo(point.x, point.y);
             });
             ctx.stroke();
         });
     };
 
-    const colores = ["black", "red", "green", "blue", "yellow", "purple", "orange", "pink"];
+    const clearDrawing = () => {
+        setActions([]);
+        setCurrentPath([]);
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    };
+
+    const saveCanvas = () => {
+        const canvas = canvasRef.current;
+        const imageData = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = imageData;
+        link.download = "pizarron.png";
+        link.click();
+    };
+
+    const fillArea = (x, y) => {
+        const ctx = canvasRef.current.getContext("2d");
+        const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+        const targetColor = ctx.getImageData(x, y, 1, 1).data;
+        const fillColor = hexToRgb(currentColor);
+
+        const stack = [{ x, y }];
+
+        while (stack.length > 0) {
+            const { x: sx, y: sy } = stack.pop();
+            const index = (sy * imageData.width + sx) * 4;
+
+            if (sx < 0 || sx >= imageData.width || sy < 0 || sy >= imageData.height) continue;
+            if (imageData.data[index] === targetColor[0] &&
+                imageData.data[index + 1] === targetColor[1] &&
+                imageData.data[index + 2] === targetColor[2]) {
+
+                imageData.data[index] = fillColor.r;
+                imageData.data[index + 1] = fillColor.g;
+                imageData.data[index + 2] = fillColor.b;
+                imageData.data[index + 3] = 255; // Alpha
+
+                stack.push({ x: sx + 1, y: sy });
+                stack.push({ x: sx - 1, y: sy });
+                stack.push({ x: sx, y: sy + 1 });
+                stack.push({ x: sx, y: sy - 1 });
+            }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+    };
+
+    const hexToRgb = (hex) => {
+        const bigint = parseInt(hex.slice(1), 16);
+        return {
+            r: (bigint >> 16) & 255,
+            g: (bigint >> 8) & 255,
+            b: bigint & 255,
+        };
+    };
+
+    const colors = ["#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#800080", "#FFA500", "#FFC0CB"];
 
     return (
         <div className={styles.container}>
             <canvas
                 ref={canvasRef}
-                onMouseDown={empezarDibujar}
-                onMouseMove={dibuja}
-                onMouseUp={terminarDibujar}
-                onMouseOut={terminarDibujar}
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={finishDrawing}
+                onMouseOut={finishDrawing}
                 className={styles.canvas}
             />
             <div className={styles.controls}>
-                {colores.map(color => (
+                {colors.map(color => (
                     <button
                         key={color}
                         onClick={() => {
                             setIsEraser(false);
-                            changeColor(color);
+                            setCurrentColor(color);
                         }}
                         className={styles.colorButton}
                         style={{ backgroundColor: color }}
@@ -137,7 +180,7 @@ export default function PizarronCanvas({ clearCanvas }) {
                     value={currentColor}
                     onChange={(e) => {
                         setIsEraser(false);
-                        changeColor(e.target.value);
+                        setCurrentColor(e.target.value);
                     }}
                     className={styles.colorInput}
                 />
@@ -146,7 +189,7 @@ export default function PizarronCanvas({ clearCanvas }) {
                     min="1"
                     max="10"
                     value={lineWidth}
-                    onChange={(e) => changeWidth(e.target.value)}
+                    onChange={(e) => setLineWidth(e.target.value)}
                     className={styles.rangeInput}
                 />
                 <button
@@ -160,13 +203,28 @@ export default function PizarronCanvas({ clearCanvas }) {
                 >
                     {isEraser ? "Usar lápiz" : "Usar goma"}
                 </button>
+                <button
+                    onClick={(e) => {
+                        const rect = canvasRef.current.getBoundingClientRect();
+                        fillArea(
+                            Math.floor(e.clientX - rect.left),
+                            Math.floor(e.clientY - rect.top)
+                        );
+                    }}
+                    className={styles.fillButton}
+                >
+                    Rellenar
+                </button>
             </div>
             <div className={styles.actionButtons}>
-                <button className={styles.undoButton} onClick={undoDibujo}>
+                <button className={styles.undoButton} onClick={undoDrawing}>
                     Volver
                 </button>
-                <button className={styles.clearButton} onClick={limpiarDibujo}>
+                <button className={styles.clearButton} onClick={clearDrawing}>
                     Borrar
+                </button>
+                <button onClick={saveCanvas} className={styles.saveButton}>
+                    Guardar
                 </button>
             </div>
         </div>

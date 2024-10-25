@@ -6,10 +6,11 @@ import styles from './page.module.css';
 
 export default function Home() {
     const [palabras, setPalabras] = useState([]);
+    const [palabrasSeleccionadas, setPalabrasSeleccionadas] = useState([]);
     const [palabraActual, setPalabraActual] = useState("");
     const [segundos, setSegundos] = useState(45);
     const [clearCanvas, setClearCanvas] = useState(false);
-    const [message, setMessage] = useState(""); // Cambia el estado a uno solo
+    const [message, setMessage] = useState("");
 
     useEffect(() => {
         const fetchPalabras = async () => {
@@ -17,10 +18,7 @@ export default function Home() {
                 const response = await fetch('http://localhost:4000/palabrasObtener');
                 const data = await response.json();
                 setPalabras(data);
-                if (data.length > 0) {
-                    const a = Math.floor(Math.random() * data.length);
-                    setPalabraActual(data[a].palabra);
-                }
+                seleccionarTresPalabras(data);
             } catch (error) {
                 console.error("Error al obtener palabras:", error);
             }
@@ -29,40 +27,55 @@ export default function Home() {
         fetchPalabras();
     }, []);
 
-    useEffect(() => {
+    const seleccionarTresPalabras = (data) => {
+        const seleccionadas = [];
+        while (seleccionadas.length < 3) {
+            const randomIndex = Math.floor(Math.random() * data.length);
+            const palabra = data[randomIndex].palabra;
+            if (!seleccionadas.includes(palabra)) {
+                seleccionadas.push(palabra);
+            }
+        }
+        setPalabrasSeleccionadas(seleccionadas);
+    };
+
+    const manejarSeleccionPalabra = (palabra) => {
+        setPalabraActual(palabra);
+        iniciarTemporizador();
+    };
+
+    const iniciarTemporizador = () => {
+        setSegundos(45);
         const intervalId = setInterval(() => {
             setSegundos((prev) => {
                 if (prev === 1) {
+                    clearInterval(intervalId);
                     resetGame();
-                    setMessage("Tiempo agotado!"); // Mensaje al acabar el tiempo
-                    return 45;
+                    setMessage("Se terminó el tiempo!");
+                    return 0; // Opcionalmente puedes mantener en 0
                 }
                 return prev - 1;
             });
         }, 1000);
-
-        return () => clearInterval(intervalId);
-    }, [palabras]);
+        
+        return intervalId;
+    };
 
     const resetGame = () => {
         setClearCanvas(true);
         setTimeout(() => {
             setClearCanvas(false);
         }, 0);
-
-        if (palabras.length > 0) {
-            const randomIndex = Math.floor(Math.random() * palabras.length);
-            setPalabraActual(palabras[randomIndex]?.palabra || "");
-        }
-        setSegundos(45);
-        setMessage(""); // Reiniciar el mensaje
+        
+        seleccionarTresPalabras(palabras);
+        setPalabraActual("");
     };
 
     const handleCorrectGuess = () => {
-        setMessage("¡Palabra correcta!"); // Mensaje al acertar
+        setMessage("¡Palabra correcta!");
         resetGame();
         setTimeout(() => {
-            setMessage(""); // Ocultar el mensaje después de 2 segundos
+            setMessage("");
         }, 2000);
     };
 
@@ -71,15 +84,27 @@ export default function Home() {
     return (
         <main className={styles.container}>
             <div className={styles.wordSection}>
-                <p className={styles.word}>{palabraActual}</p>
-                <h3 className={timerClass}>{segundos} segundos</h3>
+                {palabraActual ? (
+                    <>
+                        <p className={styles.word}>{palabraActual}</p>
+                        <h3 className={timerClass}>{segundos} segundos</h3>
+                    </>
+                ) : (
+                    <div className={styles.seleccionPalabra}>
+                        <h3>Selecciona una palabra:</h3>
+                        {palabrasSeleccionadas.map((palabra, index) => (
+                            <button key={index} onClick={() => manejarSeleccionPalabra(palabra)}>
+                                {palabra}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
             {message && (
                 <div className={styles.messageBanner}>
                     {message}
                 </div>
             )}
-
 
             <div className={styles.flexContainer}>
                 <div className="pizarronContainer">

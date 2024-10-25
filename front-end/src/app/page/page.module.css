@@ -11,10 +11,45 @@
     position: relative; /* Añadido para el posicionamiento del banner */
 }
 
+.seleccionPalabra {
+    color: black;
+    display: flex;
+    flex-direction: row; /* Cambia la dirección a horizontal */
+    justify-content: center; /* Centra los botones horizontalmente */
+    margin-top: 20px;
+    gap: 10px; /* Espacio entre los botones */
+    flex-wrap: nowrap; /* Evita que los botones se muevan a la siguiente línea */
+    font-size: 20px;
+}
+
+.seleccionPalabra button {
+    background-color: hsl(0, 0%, 0%);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+    white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+    overflow: hidden; /* Esconde el texto que se desborda */
+    text-overflow: ellipsis; /* Muestra puntos suspensivos si el texto es muy largo */
+}
+
+.seleccionPalabra button:hover {
+    background-color: hsl(0, 0%, 21%); /* Verde más oscuro */
+    transform: scale(1.05); /* Efecto de aumento */
+}
+
+.seleccionPalabra button:active {
+    transform: scale(0.95); /* Efecto de pulsación */
+}
+
+
 .messageBanner {
     background-color: #d4edda;
     color: #155724;
-    padding: 20px; /* Aumenta el padding para que se vea mejor */
+    padding: 10px; /* Aumenta el padding para que se vea mejor */
     border-radius: 5px;
     text-align: center;
     position: fixed; /* Cambia a fixed para que esté en toda la pantalla */
