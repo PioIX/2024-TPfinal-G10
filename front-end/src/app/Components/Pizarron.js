@@ -54,7 +54,6 @@ export default function PizarronCanvas({ clearCanvas }) {
 
         ctx.beginPath();
         ctx.moveTo(lastPoint.x, lastPoint.y);
-        ctx.quadraticCurveTo(lastPoint.x, lastPoint.y, (lastPoint.x + x) / 2, (lastPoint.y + y) / 2);
         ctx.lineTo(x, y);
         ctx.stroke();
 
@@ -113,8 +112,20 @@ export default function PizarronCanvas({ clearCanvas }) {
     const fillArea = (x, y) => {
         const ctx = canvasRef.current.getContext("2d");
         const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-        const targetColor = ctx.getImageData(x, y, 1, 1).data;
+        const targetColor = [
+            imageData.data[(y * imageData.width + x) * 4],
+            imageData.data[(y * imageData.width + x) * 4 + 1],
+            imageData.data[(y * imageData.width + x) * 4 + 2],
+        ];
         const fillColor = hexToRgb(currentColor);
+
+        if (
+            targetColor[0] === fillColor.r &&
+            targetColor[1] === fillColor.g &&
+            targetColor[2] === fillColor.b
+        ) {
+            return;
+        }
 
         const stack = [{ x, y }];
 
@@ -123,14 +134,16 @@ export default function PizarronCanvas({ clearCanvas }) {
             const index = (sy * imageData.width + sx) * 4;
 
             if (sx < 0 || sx >= imageData.width || sy < 0 || sy >= imageData.height) continue;
-            if (imageData.data[index] === targetColor[0] &&
-                imageData.data[index + 1] === targetColor[1] &&
-                imageData.data[index + 2] === targetColor[2]) {
 
+            if (
+                imageData.data[index] === targetColor[0] &&
+                imageData.data[index + 1] === targetColor[1] &&
+                imageData.data[index + 2] === targetColor[2]
+            ) {
                 imageData.data[index] = fillColor.r;
                 imageData.data[index + 1] = fillColor.g;
                 imageData.data[index + 2] = fillColor.b;
-                imageData.data[index + 3] = 255; // Alpha
+                imageData.data[index + 3] = 255;
 
                 stack.push({ x: sx + 1, y: sy });
                 stack.push({ x: sx - 1, y: sy });
