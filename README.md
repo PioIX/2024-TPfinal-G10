@@ -19,7 +19,7 @@ El objetivo de **artAtack** es simple: un jugador dibuja una palabra o frase, mi
 
 - **Frontend**: HTML, CSS, JavaScript
 - **Backend**: Node.js, Express
-- **Base de Datos**: MongoDB (o la opción que elijas)
+- **Base de Datos**: MySql
 - **WebSockets**: Para comunicación en tiempo real entre jugadores.
 
 ## Presupuesto Aproximado
