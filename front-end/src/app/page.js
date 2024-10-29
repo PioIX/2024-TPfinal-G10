@@ -39,6 +39,7 @@ const GameRoom = () => {
         });
 
         console.log('Unido a la sala con código:', gameCode);
+        localStorage.setItem("username", userName)
         window.location.href = "http://localhost:3000/page"; 
         setError('');
       } catch (err) {

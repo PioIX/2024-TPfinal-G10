@@ -29,7 +29,7 @@ export default function Chat() {
         e.preventDefault();
         if (input.trim()) {
             // Agregar el nombre al mensaje
-            const newMessage = `${lastUserName}: ${input}`;
+            const newMessage = `${localStorage.getItem("username")}: ${input}`;
             setMessages([...messages, newMessage]);
             setInput("");
         }
