@@ -184,7 +184,7 @@ app.post('/guardarNombre', async (req, res) => {
   });
   app.get('/ultimoNombre', async (req, res) => {
 	try {
-	  const results = await db.query('SELECT nombre FROM nombres ORDER BY id_nombre DESC LIMIT 1');
+	  const results = await db.query('SELECT nombre FROM nombres ORDER BY id DESC LIMIT 1');
 	  res.json(results[0]); // Esto debería funcionar si results[0] contiene el nombre
 	} catch (err) {
 	  res.status(500).send(err);
