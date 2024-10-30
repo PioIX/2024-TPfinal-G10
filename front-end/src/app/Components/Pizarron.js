@@ -36,7 +36,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.ctrlKey && e.key === 'z') {
-                e.preventDefault(); // Evita la acción predeterminada del navegador
+                e.preventDefault();
                 undoDrawing();
             }
         };
@@ -45,10 +45,10 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [actions]); // Agregar actions como dependencia para asegurarte de que siempre tenga el estado más reciente
+    }, [actions]);
 
     const startDrawing = (e) => {
-        if (disabled) return; // Ignorar si está deshabilitado
+        if (disabled) return;
         if (context) {
             context.beginPath();
             context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
@@ -58,7 +58,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     };
 
     const draw = (e) => {
-        if (disabled || !drawing || isFilling) return; // Ignorar si está deshabilitado
+        if (disabled || !drawing || isFilling) return;
         const x = e.nativeEvent.offsetX;
         const y = e.nativeEvent.offsetY;
         smoothDraw(context, x, y);
@@ -101,7 +101,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     const redrawCanvas = (actions) => {
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        ctx.fillStyle = "#FFFFFF"; // Vuelve a llenar el fondo blanco
+        ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         actions.forEach(({ path, color, lineWidth }) => {
             ctx.beginPath();
@@ -120,7 +120,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         setCurrentPath([]);
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        ctx.fillStyle = "#FFFFFF"; // Rellena el fondo blanco
+        ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     };
 
@@ -145,7 +145,6 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         ];
         const fillColor = hexToRgb(currentColor);
 
-        // Comprobar si el color objetivo y el color de relleno son iguales
         if (
             targetColor[0] === fillColor.r &&
             targetColor[1] === fillColor.g &&
@@ -178,13 +177,11 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
                 imageData.data[index + 2] !== targetColor[2]
             ) continue;
 
-            // Rellenar el píxel
             imageData.data[index] = fillColor.r;
             imageData.data[index + 1] = fillColor.g;
-            imageData.data[index + 1] = fillColor.b;
+            imageData.data[index + 2] = fillColor.b;
             imageData.data[index + 3] = 255;
 
-            // Añadir los píxeles vecinos a la pila
             offsets.forEach(({ dx, dy }) => {
                 stack.push({ x: sx + dx, y: sy + dy });
             });
@@ -220,34 +217,34 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
                     );
                 }}
                 className={styles.canvas}
-                style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }} // Cambiar el cursor si está deshabilitado
+                style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }}
             />
             <div className={styles.controls}>
                 {colors.map(color => (
                     <button
                         key={color}
                         onClick={() => {
-                            if (!disabled) { // Solo cambiar si no está deshabilitado
+                            if (!disabled) {
                                 setIsEraser(false);
                                 setCurrentColor(color);
                             }
                         }}
                         className={styles.colorButton}
                         style={{ backgroundColor: color }}
-                        disabled={disabled} // Deshabilitar el botón si es necesario
+                        disabled={disabled}
                     />
                 ))}
                 <input
                     type="color"
                     value={currentColor}
                     onChange={(e) => {
-                        if (!disabled) { // Solo cambiar si no está deshabilitado
+                        if (!disabled) {
                             setIsEraser(false);
                             setCurrentColor(e.target.value);
                         }
                     }}
                     className={styles.colorInput}
-                    disabled={disabled} // Deshabilitar el input si es necesario
+                    disabled={disabled}
                 />
                 <input
                     type="range"
@@ -255,32 +252,32 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
                     max="10"
                     value={lineWidth}
                     onChange={(e) => {
-                        if (!disabled) { // Solo cambiar si no está deshabilitado
+                        if (!disabled) {
                             setLineWidth(e.target.value);
                         }
                     }}
                     className={styles.rangeInput}
-                    disabled={disabled} // Deshabilitar el input si es necesario
+                    disabled={disabled}
                 />
                 <button
                     onClick={() => {
-                        if (!disabled) { // Solo cambiar si no está deshabilitado
+                        if (!disabled) {
                             setIsEraser(!isEraser);
                             if (isEraser) {
-                                setCurrentColor("#000000"); // Cambia el color a negro al desactivar la goma
+                                setCurrentColor("#000000");
                             } else {
-                                setCurrentColor(currentColor); // Mantiene el color actual si se activa la goma
+                                setCurrentColor(currentColor);
                             }
                         }
                     }}
                     className={styles.eraserButton}
-                    disabled={disabled} // Deshabilitar el botón si es necesario
+                    disabled={disabled}
                 >
                     {isEraser ? "Usar lápiz" : "Usar goma"}
                 </button>
                 <button
                     onClick={() => {
-                        if (!disabled) { // Solo cambiar si no está deshabilitado
+                        if (!disabled) {
                             setIsFilling((prev) => {
                                 if (prev) {
                                     setCurrentColor("#000000");
@@ -290,7 +287,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
                         }
                     }}
                     className={styles.fillButton}
-                    disabled={disabled} // Deshabilitar el botón si es necesario
+                    disabled={disabled}
                 >
                     {isFilling ? "Desactivar Rellenar" : "Activar Rellenar"}
                 </button>

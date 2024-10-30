@@ -8,10 +8,12 @@ export default function Home() {
     const [palabras, setPalabras] = useState([]);
     const [palabrasSeleccionadas, setPalabrasSeleccionadas] = useState([]);
     const [palabraActual, setPalabraActual] = useState("");
-    const [segundos, setSegundos] = useState(45);
+    const [segundos, setSegundos] = useState(60);
     const [clearCanvas, setClearCanvas] = useState(false);
     const [message, setMessage] = useState("");
-    const [canvasEnabled, setCanvasEnabled] = useState(false); // Nuevo estado
+    const [canvasEnabled, setCanvasEnabled] = useState(false);
+    const [usoPalabra, setUsoPalabra] = useState(0); // Nuevo estado
+    const [intervalId, setIntervalId] = useState(null); // Estado para el ID del intervalo
 
     useEffect(() => {
         const fetchPalabras = async () => {
@@ -42,25 +44,31 @@ export default function Home() {
 
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
-        setCanvasEnabled(true); // Habilitar el canvas
+        setCanvasEnabled(true);
+        setUsoPalabra((prev) => prev + 1); // Incrementar el uso de la palabra
         iniciarTemporizador();
     };
 
     const iniciarTemporizador = () => {
-        setSegundos(45);
-        const intervalId = setInterval(() => {
+        // Limpia el intervalo anterior si existe
+        if (intervalId) {
+            clearInterval(intervalId);
+        }
+        
+        setSegundos(60);
+        const newIntervalId = setInterval(() => {
             setSegundos((prev) => {
                 if (prev === 1) {
-                    clearInterval(intervalId);
+                    clearInterval(newIntervalId);
                     resetGame();
                     setMessage("Se terminó el tiempo!");
-                    return 0; // Opcionalmente puedes mantener en 0
+                    return 0;
                 }
                 return prev - 1;
             });
         }, 1000);
         
-        return intervalId;
+        setIntervalId(newIntervalId); // Guarda el nuevo ID del intervalo
     };
 
     const resetGame = () => {
@@ -71,7 +79,14 @@ export default function Home() {
         
         seleccionarTresPalabras(palabras);
         setPalabraActual("");
-        setCanvasEnabled(false); // Deshabilitar el canvas
+        setCanvasEnabled(false);
+        setUsoPalabra(0); // Reiniciar el uso de la palabra
+        
+        // Limpia el intervalo al reiniciar el juego
+        if (intervalId) {
+            clearInterval(intervalId);
+            setIntervalId(null);
+        }
     };
 
     const handleCorrectGuess = () => {
@@ -83,6 +98,24 @@ export default function Home() {
     };
 
     const timerClass = segundos <= 10 ? styles.timerRed : styles.timerBlack;
+
+    // Si se ha mostrado la palabra dos veces, se rompe el cronómetro
+    useEffect(() => {
+        if (usoPalabra === 2) {
+            setSegundos(0);
+            setMessage("Se rompió el cronómetro!");
+            resetGame();
+        }
+    }, [usoPalabra]);
+
+    // Limpia el intervalo cuando el componente se desmonte
+    useEffect(() => {
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [intervalId]);
 
     return (
         <main className={styles.container}>
@@ -111,7 +144,7 @@ export default function Home() {
 
             <div className={styles.flexContainer}>
                 <div className="pizarronContainer">
-                    <PizarronCanvas clearCanvas={clearCanvas} disabled={!canvasEnabled} /> {/* Deshabilitar el canvas */}
+                    <PizarronCanvas clearCanvas={clearCanvas} disabled={!canvasEnabled} />
                 </div>
                 <div className="chatContainer">
                     <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} />
