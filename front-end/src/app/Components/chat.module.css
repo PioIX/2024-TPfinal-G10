@@ -1,0 +1,70 @@
+.chatContainer {
+    background-color: #ffffff;
+    border: 2px solid #000000;
+    border-radius: 8px;
+    padding: 10px;
+    max-width: 400px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; 
+    height: 500px;
+    min-height: 100px; 
+    margin-top: 10px;
+}
+.casiMessage {
+    color: rgb(235, 177, 20);
+}
+
+.correctMessage {
+    color: green;
+}
+
+.messageList {
+    max-height: 500px; 
+    overflow-y: auto;
+    flex-grow: 1; 
+    margin-bottom: 10px;
+}
+
+.message {
+    padding: 10px;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+.userMessage {
+    background-color: #0000006c; 
+    align-self: flex-end; 
+}
+
+.botMessage {
+    background-color: #000000; 
+    align-self: flex-start; 
+}
+
+.inputContainer {
+    display: flex;
+    align-items: center;
+}
+
+.inputField {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.sendButton {
+    background-color: #000000; /* Botón azul */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+.sendButton:hover {
+    background-color: #141414; /* Color más oscuro al pasar el mouse */
+}

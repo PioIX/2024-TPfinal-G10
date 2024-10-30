@@ -1,6 +1,7 @@
 "use client"; 
 import React, { useState, useEffect } from 'react';
 import styles from './page.module.css'; 
+import Link from 'next/link';
 
 const GameRoom = () => {
   const [gameCode, setGameCode] = useState('');
@@ -39,7 +40,7 @@ const GameRoom = () => {
         });
 
         console.log('Unido a la sala con código:', gameCode);
-        localStorage.setItem("username", userName)
+        localStorage.setItem("username", userName);
         window.location.href = "http://localhost:3000/page"; 
         setError('');
       } catch (err) {
@@ -81,7 +82,7 @@ const GameRoom = () => {
         setMaxPlayers('');
         document.getElementById('createGameModal').close(); 
         setError('');
-        window.location.href = "http://localhost:3000/page"; 
+        window.href="/otra-pagina";
       } catch (err) {
         setError('Error al crear la sala.');
         console.error('Error:', err);
@@ -127,7 +128,7 @@ const GameRoom = () => {
       </div>
       <dialog id="createGameModal" className={styles.modal}>
         <form onSubmit={handleCreateGame}>
-          <label htmlFor="newGameCode" className={styles.label}>Código del Juego</label>
+          <label htmlFor="gameCode" className={styles.label}>Código del Juego</label>
           <input
             type="text"
             id="newGameCode"

@@ -1,164 +1,295 @@
 "use client";
 import React, { useRef, useEffect, useState } from "react";
+import styles from './PizarronCanvas.module.css';
 
-export default function PizarronCanvas() {
+export default function PizarronCanvas({ clearCanvas, disabled }) {
     const canvasRef = useRef(null);
     const [context, setContext] = useState(null);
-    const [dibujar, setDibujar] = useState(false);
-    const [currentColor, setCurrentColor] = useState("black");
+    const [drawing, setDrawing] = useState(false);
+    const [currentColor, setCurrentColor] = useState("#000000");
     const [lineWidth, setLineWidth] = useState(3);
-    const [accionesDibujar, setAccionesDibujar] = useState([]);
+    const [actions, setActions] = useState([]);
     const [currentPath, setCurrentPath] = useState([]);
-    const [currentStyle, setCurrentStyle] = useState({ color: "black", lineWidth: 3 });
-    const [isEraser, setIsEraser] = useState(false); // Estado para la goma de borrar
+    const [isEraser, setIsEraser] = useState(false);
+    const [isFilling, setIsFilling] = useState(false);
 
     useEffect(() => {
-        if (canvasRef.current) {
-            const canvas = canvasRef.current;
-            canvas.width = 900;
-            canvas.height = 500;
-            const ctx = canvas.getContext("2d");
-            setContext(ctx);
-            dataAnterior(ctx);
-        }
+        const canvas = canvasRef.current;
+        canvas.width = 900;
+        canvas.height = 500;
+        const ctx = canvas.getContext("2d");
+        setContext(ctx);
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+
+        // Establecer fondo blanco
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
     }, []);
 
-    const empezarDibujar = (e) => {
+    useEffect(() => {
+        if (clearCanvas) {
+            clearDrawing();
+        }
+    }, [clearCanvas]);
+
+    const startDrawing = (e) => {
+        if (disabled) return; // Ignorar si está deshabilitado
         if (context) {
             context.beginPath();
             context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-            setDibujar(true);
+            setDrawing(true);
+            setCurrentPath([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
         }
     };
 
-    const dibuja = (e) => {
-        if (!dibujar) return;
-        if (context) {
-            // Cambia el color a blanco si se usa la goma
-            context.strokeStyle = isEraser ? "white" : currentStyle.color;
-            context.lineWidth = isEraser ? lineWidth * 2 : currentStyle.lineWidth; // Goma más ancha
-            context.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-            context.stroke();
-            setCurrentPath([...currentPath, { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
-        }
+    const draw = (e) => {
+        if (disabled || !drawing || isFilling) return; // Ignorar si está deshabilitado
+        const x = e.nativeEvent.offsetX;
+        const y = e.nativeEvent.offsetY;
+        smoothDraw(context, x, y);
     };
 
-    const terminarDibujar = () => {
-        setDibujar(false);
-        context && context.closePath();
+    const smoothDraw = (ctx, x, y) => {
+        if (currentPath.length === 0) return;
+
+        const lastPoint = currentPath[currentPath.length - 1];
+
+        ctx.strokeStyle = isEraser ? "#FFFFFF" : currentColor;
+        ctx.lineWidth = isEraser ? lineWidth * 2 : lineWidth;
+
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        setCurrentPath((prev) => [...prev, { x, y }]);
+    };
+
+    const finishDrawing = () => {
+        setDrawing(false);
         if (currentPath.length > 0) {
-            setAccionesDibujar([...accionesDibujar, { path: currentPath, style: currentStyle }]);
+            setActions((prev) => [...prev, { path: currentPath, color: currentColor, lineWidth }]);
+            setCurrentPath([]);
         }
-        setCurrentPath([]);
+        context.closePath();
     };
 
-    const changeColor = (color) => {
-        setCurrentColor(color);
-        setCurrentStyle({ ...currentStyle, color });
-    };
-
-    const changeWidth = (width) => {
-        setLineWidth(width);
-        setCurrentStyle({ ...currentStyle, lineWidth: width });
-    };
-
-    const undoDibujo = () => {
-        if (accionesDibujar.length > 0) {
-            const newAcciones = [...accionesDibujar];
-            newAcciones.pop();
-            setAccionesDibujar(newAcciones);
-
-            const newContext = canvasRef.current.getContext("2d");
-            newContext.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            dataAnterior(newContext);
+    const undoDrawing = () => {
+        if (actions.length > 0) {
+            const newActions = [...actions];
+            newActions.pop();
+            setActions(newActions);
+            redrawCanvas(newActions);
         }
     };
 
-    const limpiarDibujo = () => {
-        setAccionesDibujar([]);
-        setCurrentPath([]);
-        const newContext = canvasRef.current.getContext("2d");
-        newContext.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    };
-
-    const dataAnterior = (ctx) => {
-        accionesDibujar.forEach(({ path, style }) => {
+    const redrawCanvas = (actions) => {
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.fillStyle = "#FFFFFF"; // Vuelve a llenar el fondo blanco
+        ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        actions.forEach(({ path, color, lineWidth }) => {
             ctx.beginPath();
-            ctx.strokeStyle = style.color;
-            ctx.lineWidth = style.lineWidth;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
             ctx.moveTo(path[0].x, path[0].y);
-            path.forEach((point) => {
+            path.forEach(point => {
                 ctx.lineTo(point.x, point.y);
             });
             ctx.stroke();
         });
     };
 
-    const colores = ["black", "red", "green", "blue", "yellow", "purple", "orange", "pink"];
+    const clearDrawing = () => {
+        setActions([]);
+        setCurrentPath([]);
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.fillStyle = "#FFFFFF"; // Rellena el fondo blanco
+        ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    };
+
+    const saveCanvas = () => {
+        const canvas = canvasRef.current;
+        const imageData = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = imageData;
+        link.download = "pizarron.png";
+        link.click();
+    };
+
+    const fillArea = (x, y) => {
+        if (!isFilling) return;
+
+        const ctx = canvasRef.current.getContext("2d");
+        const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+        const targetColor = [
+            imageData.data[(y * imageData.width + x) * 4],
+            imageData.data[(y * imageData.width + x) * 4 + 1],
+            imageData.data[(y * imageData.width + x) * 4 + 2],
+        ];
+        const fillColor = hexToRgb(currentColor);
+
+        // Comprobar si el color objetivo y el color de relleno son iguales
+        if (
+            targetColor[0] === fillColor.r &&
+            targetColor[1] === fillColor.g &&
+            targetColor[2] === fillColor.b
+        ) {
+            return;
+        }
+
+        const stack = [{ x, y }];
+        const offsets = [
+            { dx: 0, dy: 0 },
+            { dx: 1, dy: 0 },
+            { dx: -1, dy: 0 },
+            { dx: 0, dy: 1 },
+            { dx: 0, dy: -1 },
+            { dx: 1, dy: 1 },
+            { dx: 1, dy: -1 },
+            { dx: -1, dy: 1 },
+            { dx: -1, dy: -1 }
+        ];
+
+        while (stack.length > 0) {
+            const { x: sx, y: sy } = stack.pop();
+            const index = (sy * imageData.width + sx) * 4;
+
+            if (
+                sx < 0 || sx >= imageData.width || sy < 0 || sy >= imageData.height ||
+                imageData.data[index] !== targetColor[0] ||
+                imageData.data[index + 1] !== targetColor[1] ||
+                imageData.data[index + 2] !== targetColor[2]
+            ) continue;
+
+            // Rellenar el píxel
+            imageData.data[index] = fillColor.r;
+            imageData.data[index + 1] = fillColor.g;
+            imageData.data[index + 2] = fillColor.b;
+            imageData.data[index + 3] = 255;
+
+            // Añadir los píxeles vecinos a la pila
+            offsets.forEach(({ dx, dy }) => {
+                stack.push({ x: sx + dx, y: sy + dy });
+            });
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+    };
+
+    const hexToRgb = (hex) => {
+        const bigint = parseInt(hex.slice(1), 16);
+        return {
+            r: (bigint >> 16) & 255,
+            g: (bigint >> 8) & 255,
+            b: bigint & 255,
+        };
+    };
+
+    const colors = ["#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#800080", "#FFA500", "#FFC0CB"];
 
     return (
-        <div>
+        <div className={styles.container}>
             <canvas
                 ref={canvasRef}
-                onMouseDown={empezarDibujar}
-                onMouseMove={dibuja}
-                onMouseUp={terminarDibujar}
-                onMouseOut={terminarDibujar}
-                className="border border-gray"
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={finishDrawing}
+                onMouseOut={finishDrawing}
+                onClick={(e) => {
+                    const rect = canvasRef.current.getBoundingClientRect();
+                    fillArea(
+                        Math.floor(e.clientX - rect.left),
+                        Math.floor(e.clientY - rect.top)
+                    );
+                }}
+                className={styles.canvas}
+                style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }} // Cambiar el cursor si está deshabilitado
             />
-            <div className="flex my-4">
-                {colores.map(color => (
+            <div className={styles.controls}>
+                {colors.map(color => (
                     <button
                         key={color}
                         onClick={() => {
-                            setIsEraser(false); // Desactiva la goma al seleccionar un color
-                            changeColor(color);
+                            if (!disabled) { // Solo cambiar si no está deshabilitado
+                                setIsEraser(false);
+                                setCurrentColor(color);
+                            }
                         }}
-                        style={{ backgroundColor: color, width: '40px', height: '40px', marginRight: '5px', border: 'none', cursor: 'pointer' }}
+                        className={styles.colorButton}
+                        style={{ backgroundColor: color }}
+                        disabled={disabled} // Deshabilitar el botón si es necesario
                     />
                 ))}
                 <input
                     type="color"
                     value={currentColor}
                     onChange={(e) => {
-                        setIsEraser(false); // Desactiva la goma al seleccionar un color
-                        changeColor(e.target.value);
+                        if (!disabled) { // Solo cambiar si no está deshabilitado
+                            setIsEraser(false);
+                            setCurrentColor(e.target.value);
+                        }
                     }}
-                    className="border border-gray-300 rounded"
+                    className={styles.colorInput}
+                    disabled={disabled} // Deshabilitar el input si es necesario
                 />
-                <div className="flex-grow" />
                 <input
                     type="range"
                     min="1"
                     max="10"
                     value={lineWidth}
-                    onChange={(e) => changeWidth(e.target.value)}
+                    onChange={(e) => {
+                        if (!disabled) { // Solo cambiar si no está deshabilitado
+                            setLineWidth(e.target.value);
+                        }
+                    }}
+                    className={styles.rangeInput}
+                    disabled={disabled} // Deshabilitar el input si es necesario
                 />
                 <button
                     onClick={() => {
-                        setIsEraser(!isEraser); // Alterna el estado de la goma
-                        if (!isEraser) {
-                            setCurrentColor("white"); // Cambia el color a blanco si se activa la goma
+                        if (!disabled) { // Solo cambiar si no está deshabilitado
+                            setIsEraser(!isEraser);
+                            if (isEraser) {
+                                setCurrentColor("#000000"); // Cambia el color a negro al desactivar la goma
+                            } else {
+                                setCurrentColor(currentColor); // Mantiene el color actual si se activa la goma
+                            }
                         }
                     }}
-                    style={{
-                        backgroundColor: isEraser ? "gray" : "lightgray",
-                        color: "black",
-                        padding: '10px',
-                        marginLeft: '10px',
-                        border: 'none',
-                        cursor: 'pointer'
-                    }}
+                    className={styles.eraserButton}
+                    disabled={disabled} // Deshabilitar el botón si es necesario
                 >
                     {isEraser ? "Usar lápiz" : "Usar goma"}
                 </button>
-            </div>
-            <div className="flex justify-center my-4">
-                <button className="bg-blue-500 text-white px-4 py-2 mr-2" onClick={undoDibujo}>
-                    Undo
+                <button
+                    onClick={() => {
+                        if (!disabled) { // Solo cambiar si no está deshabilitado
+                            setIsFilling((prev) => {
+                                if (prev) {
+                                    setCurrentColor("#000000");
+                                }
+                                return !prev;
+                            });
+                        }
+                    }}
+                    className={styles.fillButton}
+                    disabled={disabled} // Deshabilitar el botón si es necesario
+                >
+                    {isFilling ? "Desactivar Rellenar" : "Activar Rellenar"}
                 </button>
-                <button className="bg-red-500 text-white px-4 py-2" onClick={limpiarDibujo}>
-                    Clear
+            </div>
+            <div className={styles.actionButtons}>
+                <button className={styles.undoButton} onClick={undoDrawing} disabled={disabled}>
+                    Volver
+                </button>
+                <button className={styles.clearButton} onClick={clearDrawing} disabled={disabled}>
+                    Borrar
+                </button>
+                <button onClick={saveCanvas} className={styles.saveButton} disabled={disabled}>
+                    Guardar
                 </button>
             </div>
         </div>
