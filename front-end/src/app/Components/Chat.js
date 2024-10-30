@@ -1,10 +1,31 @@
-import React, { useEffect, useRef, useState } from 'react';
+"use client";
+import React, { useEffect, useRef, useState } from "react";
 import styles from './chat.module.css';
 
 const Chat = ({ palabraActual, onCorrectGuess }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
+    const [lastUserName, setLastUserName] = useState(""); // Estado para el último nombre de usuario
     const messageEndRef = useRef(null);
+
+    // Obtener el último nombre guardado al montar el componente
+    useEffect(() => {
+        const fetchLastUserName = async () => {
+            try {
+                const response = await fetch('http://localhost:4000/ultimoNombre');
+                const data = await response.json();
+                if (data && data.nombre) {
+                    setLastUserName(data.nombre);
+                } else {
+                    console.warn('No se encontró un nombre en la respuesta');
+                }
+            } catch (err) {
+                console.error('Error fetching last user name:', err);
+            }
+        };
+
+        fetchLastUserName();
+    }, []);
 
     const normalizeString = (str) => {
         return str
@@ -17,7 +38,6 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
         const normalizedInput = normalizeString(input);
         const normalizedActual = normalizeString(actual);
         
-        // Verifica si el input tiene la misma longitud que la palabra actual o una letra menos
         if (normalizedInput.length === normalizedActual.length || normalizedInput.length + 1 === normalizedActual.length) {
             const inputSet = new Set(normalizedInput);
             const actualSet = new Set(normalizedActual);
@@ -91,6 +111,7 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
                 />
                 <button className={styles.sendButton} onClick={sendMessage}>Enviar</button>
             </div>
+            {lastUserName && <div className="mt-2 text-sm">Último usuario: {lastUserName}</div>} {/* Mostrar el último nombre */}
         </div>
     );
 };

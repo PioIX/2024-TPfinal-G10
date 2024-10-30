@@ -76,6 +76,7 @@ app.post('/crearSala', async (req, res) => {
 
 
 
+
 app.post('/sendMessage', async (req, res) => {
 	const { chatId, message, sender } = req.body;
   
@@ -179,3 +180,24 @@ io.on("a", (socket) => {
 		console.log("Disconnect");
 	})
 });
+app.post('/guardarNombre', async (req, res) => {
+	const { nombre } = req.body;
+	try {
+	  const results = await db.query(
+		`INSERT INTO nombres (nombre) VALUES ('${nombre}')`
+	  );
+	  res.status(201).json(results);
+	} catch (err) {
+	  res.status(500).send(err);
+	}
+  });
+  app.get('/ultimoNombre', async (req, res) => {
+	try {
+	  const results = await db.query('SELECT nombre FROM nombres ORDER BY id DESC LIMIT 1');
+	  res.json(results[0]); // Esto debería funcionar si results[0] contiene el nombre
+	} catch (err) {
+	  res.status(500).send(err);
+	}
+});
+
+  
