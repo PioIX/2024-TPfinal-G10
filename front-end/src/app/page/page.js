@@ -11,6 +11,7 @@ export default function Home() {
     const [segundos, setSegundos] = useState(45);
     const [clearCanvas, setClearCanvas] = useState(false);
     const [message, setMessage] = useState("");
+    const [canvasEnabled, setCanvasEnabled] = useState(false); // Nuevo estado
 
     useEffect(() => {
         const fetchPalabras = async () => {
@@ -41,6 +42,7 @@ export default function Home() {
 
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
+        setCanvasEnabled(true); // Habilitar el canvas
         iniciarTemporizador();
     };
 
@@ -69,6 +71,7 @@ export default function Home() {
         
         seleccionarTresPalabras(palabras);
         setPalabraActual("");
+        setCanvasEnabled(false); // Deshabilitar el canvas
     };
 
     const handleCorrectGuess = () => {
@@ -108,7 +111,7 @@ export default function Home() {
 
             <div className={styles.flexContainer}>
                 <div className="pizarronContainer">
-                    <PizarronCanvas clearCanvas={clearCanvas} />
+                    <PizarronCanvas clearCanvas={clearCanvas} disabled={!canvasEnabled} /> {/* Deshabilitar el canvas */}
                 </div>
                 <div className="chatContainer">
                     <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} />

@@ -19,6 +19,17 @@
     margin: 10px 0;
 }
 
+.fillButton {
+    background-color: lightgray; /* Verde para indicar que guarda */
+    color: black;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background-color 0.3s;
+}
+
 .saveButton {
     background-color: #28a745; /* Verde para indicar que guarda */
     color: white;
