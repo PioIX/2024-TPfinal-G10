@@ -1,7 +1,6 @@
 "use client"; 
 import React, { useState, useEffect } from 'react';
 import styles from './page.module.css'; 
-import Link from 'next/link';
 
 const GameRoom = () => {
   const [gameCode, setGameCode] = useState('');
@@ -65,7 +64,7 @@ const GameRoom = () => {
       return;
     }
 
-    if (gameCode && maxPlayers) {
+    if (gameCode && maxPlayers && userName.trim()) { // Verificar que el nombre no esté vacío
       try {
         const response = await fetch('http://localhost:4000/crearSala', {
           method: 'POST',
@@ -78,17 +77,28 @@ const GameRoom = () => {
         if (!response.ok) {
           throw new Error('Error al crear la sala');
         }
+
+        // Guardar el nombre al crear el juego
+        await fetch('http://localhost:4000/guardarNombre', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ nombre: userName }),
+        });
+
         setGameCode('');
         setMaxPlayers('');
+        setUserName(''); // Limpiar el estado del nombre
         document.getElementById('createGameModal').close(); 
         setError('');
-        window.href="/otra-pagina";
+        window.location.href = "/page"; // Redirigir a otra página
       } catch (err) {
         setError('Error al crear la sala.');
         console.error('Error:', err);
       }
     } else {
-      setError('Por favor, ingrese un código y un número de jugadores.');
+      setError('Por favor, ingrese un código, un número de jugadores y su nombre.');
     }
   };
 
@@ -128,7 +138,7 @@ const GameRoom = () => {
       </div>
       <dialog id="createGameModal" className={styles.modal}>
         <form onSubmit={handleCreateGame}>
-          <label htmlFor="gameCode" className={styles.label}>Código del Juego</label>
+          <label htmlFor="newGameCode" className={styles.label}>Código del Juego</label>
           <input
             type="text"
             id="newGameCode"
@@ -147,6 +157,18 @@ const GameRoom = () => {
             value={maxPlayers}
             onChange={(e) => {
               setMaxPlayers(e.target.value);
+              setError('');
+            }}
+            required
+            className={styles.input}
+          />
+          <label htmlFor="newUserName" className={styles.label}>Tu Nombre</label>
+          <input
+            type="text"
+            id="newUserName"
+            value={userName}
+            onChange={(e) => {
+              setUserName(e.target.value);
               setError('');
             }}
             required

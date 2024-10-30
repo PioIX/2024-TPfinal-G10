@@ -1,8 +1,8 @@
-"use client";
+"use client"; 
 import React, { useEffect, useRef, useState } from "react";
-import styles from './chat.module.css';
+import styles from './Chat.module.css'; // Importar el archivo CSS
 
-const Chat = ({ palabraActual, onCorrectGuess }) => {
+export default function Chat({ palabraActual, onCorrectGuess }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const [lastUserName, setLastUserName] = useState(""); // Estado para el último nombre de usuario
@@ -54,11 +54,11 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
         return false;
     };
 
-    const sendMessage = () => {
+    const sendMessage = (e) => {
+        e.preventDefault();
         if (input.trim()) {
             const normalizedInput = normalizeString(input.trim());
             const normalizedPalabra = normalizeString(palabraActual);
-
             let responseMessage = null;
 
             if (normalizedInput === normalizedPalabra) {
@@ -68,19 +68,14 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
                 responseMessage = { text: "casi", sender: 'bot', className: styles.casiMessage };
             }
 
+            const newMessage = `${localStorage.getItem("username")}: ${input}`;
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: input, sender: 'user' },
+                { text: newMessage, sender: 'user' },
                 responseMessage && responseMessage
             ].filter(Boolean));
 
             setInput("");
-        }
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === "Enter") {
-            sendMessage();
         }
     };
 
@@ -92,6 +87,7 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
 
     return (
         <div className={styles.chatContainer}>
+            <h2 className="text-lg font-bold mb-2">Chat</h2>
             <div className={styles.messageList}>
                 {messages.map((msg, index) => (
                     <div key={index} className={`${styles.message} ${msg.sender === 'user' ? styles.userMessage : msg.className}`}>
@@ -100,20 +96,18 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
                 ))}
                 <div ref={messageEndRef} />
             </div>
-            <div className={styles.inputContainer}>
+            <form onSubmit={sendMessage} className={styles.inputContainer}>
                 <input
                     type="text"
-                    className={styles.inputField}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyPress}
+                    className={styles.inputField}
                     placeholder="Escribe un mensaje..."
                 />
-                <button className={styles.sendButton} onClick={sendMessage}>Enviar</button>
-            </div>
-            {lastUserName && <div className="mt-2 text-sm">Último usuario: {lastUserName}</div>} {/* Mostrar el último nombre */}
+                <button type="submit" className={styles.sendButton}>
+                    Enviar
+                </button>
+            </form>
         </div>
     );
-};
-
-export default Chat;
+}

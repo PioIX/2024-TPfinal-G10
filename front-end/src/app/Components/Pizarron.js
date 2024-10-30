@@ -33,6 +33,20 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         }
     }, [clearCanvas]);
 
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault(); // Evita la acción predeterminada del navegador
+                undoDrawing();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [actions]); // Agregar actions como dependencia para asegurarte de que siempre tenga el estado más reciente
+
     const startDrawing = (e) => {
         if (disabled) return; // Ignorar si está deshabilitado
         if (context) {
@@ -167,7 +181,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
             // Rellenar el píxel
             imageData.data[index] = fillColor.r;
             imageData.data[index + 1] = fillColor.g;
-            imageData.data[index + 2] = fillColor.b;
+            imageData.data[index + 1] = fillColor.b;
             imageData.data[index + 3] = 255;
 
             // Añadir los píxeles vecinos a la pila
