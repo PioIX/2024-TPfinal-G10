@@ -8,17 +8,17 @@
     box-shadow: 0 4px 10px hsl(0, 0%, 0%);
     width: 100%;
     min-height: 100vh;
-    position: relative; /* Añadido para el posicionamiento del banner */
+    position: relative; 
 }
 
 .seleccionPalabra {
     color: black;
     display: flex;
-    flex-direction: row; /* Cambia la dirección a horizontal */
-    justify-content: center; /* Centra los botones horizontalmente */
+    flex-direction: row; 
+    justify-content: center; 
     margin-top: 20px;
-    gap: 10px; /* Espacio entre los botones */
-    flex-wrap: nowrap; /* Evita que los botones se muevan a la siguiente línea */
+    gap: 10px; 
+    flex-wrap: nowrap; 
     font-size: 20px;
 }
 
@@ -31,33 +31,33 @@
     font-size: 1.2rem;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.2s;
-    white-space: nowrap; /* Evita que el texto se divida en varias líneas */
-    overflow: hidden; /* Esconde el texto que se desborda */
-    text-overflow: ellipsis; /* Muestra puntos suspensivos si el texto es muy largo */
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis; 
 }
 
 .seleccionPalabra button:hover {
-    background-color: hsl(0, 0%, 21%); /* Verde más oscuro */
-    transform: scale(1.05); /* Efecto de aumento */
+    background-color: hsl(0, 0%, 21%); 
+    transform: scale(1.05); 
 }
 
 .seleccionPalabra button:active {
-    transform: scale(0.95); /* Efecto de pulsación */
+    transform: scale(0.95); 
 }
 
 
 .messageBanner {
     background-color: #d4edda;
     color: #155724;
-    padding: 10px; /* Aumenta el padding para que se vea mejor */
+    padding: 10px; 
     border-radius: 5px;
     text-align: center;
-    position: fixed; /* Cambia a fixed para que esté en toda la pantalla */
-    top: 0; /* Ajusta a la parte superior */
-    left: 0; /* Comienza desde el borde izquierdo */
-    width: 100vw; /* Abarca toda la anchura de la pantalla */
-    z-index: 100; /* Asegúrate de que esté encima de otros elementos */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Añade sombra para darle profundidad */
+    position: fixed;
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    z-index: 100; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
 }
 
 .wordSection {

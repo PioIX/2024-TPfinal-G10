@@ -12,8 +12,8 @@ export default function Home() {
     const [clearCanvas, setClearCanvas] = useState(false);
     const [message, setMessage] = useState("");
     const [canvasEnabled, setCanvasEnabled] = useState(false);
-    const [usoPalabra, setUsoPalabra] = useState(0); // Nuevo estado
-    const [intervalId, setIntervalId] = useState(null); // Estado para el ID del intervalo
+    const [usoPalabra, setUsoPalabra] = useState(0); 
+    const [intervalId, setIntervalId] = useState(null); 
 
     useEffect(() => {
         const fetchPalabras = async () => {
@@ -45,12 +45,11 @@ export default function Home() {
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
         setCanvasEnabled(true);
-        setUsoPalabra((prev) => prev + 1); // Incrementar el uso de la palabra
+        setUsoPalabra((prev) => prev + 1);
         iniciarTemporizador();
     };
 
     const iniciarTemporizador = () => {
-        // Limpia el intervalo anterior si existe
         if (intervalId) {
             clearInterval(intervalId);
         }
@@ -68,7 +67,7 @@ export default function Home() {
             });
         }, 1000);
         
-        setIntervalId(newIntervalId); // Guarda el nuevo ID del intervalo
+        setIntervalId(newIntervalId); 
     };
 
     const resetGame = () => {
@@ -80,9 +79,8 @@ export default function Home() {
         seleccionarTresPalabras(palabras);
         setPalabraActual("");
         setCanvasEnabled(false);
-        setUsoPalabra(0); // Reiniciar el uso de la palabra
+        setUsoPalabra(0); 
         
-        // Limpia el intervalo al reiniciar el juego
         if (intervalId) {
             clearInterval(intervalId);
             setIntervalId(null);
@@ -99,7 +97,6 @@ export default function Home() {
 
     const timerClass = segundos <= 10 ? styles.timerRed : styles.timerBlack;
 
-    // Si se ha mostrado la palabra dos veces, se rompe el cronómetro
     useEffect(() => {
         if (usoPalabra === 2) {
             setSegundos(0);
@@ -108,7 +105,6 @@ export default function Home() {
         }
     }, [usoPalabra]);
 
-    // Limpia el intervalo cuando el componente se desmonte
     useEffect(() => {
         return () => {
             if (intervalId) {

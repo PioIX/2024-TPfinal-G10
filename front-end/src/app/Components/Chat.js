@@ -1,14 +1,13 @@
 "use client"; 
 import React, { useEffect, useRef, useState } from "react";
-import styles from './Chat.module.css'; // Importar el archivo CSS
+import styles from './Chat.module.css';
 
 export default function Chat({ palabraActual, onCorrectGuess }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
-    const [lastUserName, setLastUserName] = useState(""); // Estado para el último nombre de usuario
+    const [lastUserName, setLastUserName] = useState("");
     const messageEndRef = useRef(null);
 
-    // Obtener el último nombre guardado al montar el componente
     useEffect(() => {
         const fetchLastUserName = async () => {
             try {
@@ -49,7 +48,7 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
                 }
             }
 
-            return differences <= 1; // Permitir hasta una letra diferente
+            return differences <= 1; 
         }
         return false;
     };

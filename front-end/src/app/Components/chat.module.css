@@ -57,7 +57,7 @@
 }
 
 .sendButton {
-    background-color: #000000; /* Botón azul */
+    background-color: #000000; 
     color: white;
     border: none;
     border-radius: 4px;
@@ -66,5 +66,5 @@
 }
 
 .sendButton:hover {
-    background-color: #141414; /* Color más oscuro al pasar el mouse */
+    background-color: #141414; 
 }

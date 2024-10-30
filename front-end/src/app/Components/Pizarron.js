@@ -21,8 +21,6 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         setContext(ctx);
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
-
-        // Establecer fondo blanco
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }, []);

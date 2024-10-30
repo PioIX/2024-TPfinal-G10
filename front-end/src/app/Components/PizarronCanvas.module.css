@@ -20,7 +20,7 @@
 }
 
 .fillButton {
-    background-color: lightgray; /* Verde para indicar que guarda */
+    background-color: lightgray;
     color: black;
     padding: 10px 20px;
     border: none;
@@ -31,7 +31,7 @@
 }
 
 .saveButton {
-    background-color: #28a745; /* Verde para indicar que guarda */
+    background-color: #28a745; 
     color: white;
     padding: 10px 20px;
     border: none;
@@ -42,11 +42,11 @@
 }
 
 .saveButton:hover {
-    background-color: #218838; /* Un verde más oscuro al pasar el ratón */
+    background-color: #218838; 
 }
 
 .saveButton:active {
-    background-color: #1e7e34; /* Aún más oscuro al hacer clic */
+    background-color: #1e7e34;
 }
 
 .colorButton {
