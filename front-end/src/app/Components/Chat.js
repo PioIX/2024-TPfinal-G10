@@ -5,7 +5,6 @@ import styles from './Chat.module.css';
 export default function Chat({ palabraActual, onCorrectGuess }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
-    const [lastUserName, setLastUserName] = useState("");
     const messageEndRef = useRef(null);
 
     useEffect(() => {
@@ -14,7 +13,7 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
                 const response = await fetch('http://localhost:4000/ultimoNombre');
                 const data = await response.json();
                 if (data && data.nombre) {
-                    setLastUserName(data.nombre);
+                    localStorage.setItem("username", data.nombre); // Guardar el nombre si existe
                 } else {
                     console.warn('No se encontró un nombre en la respuesta');
                 }
@@ -67,7 +66,10 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
                 responseMessage = { text: "casi", sender: 'bot', className: styles.casiMessage };
             }
 
-            const newMessage = `${localStorage.getItem("username")}: ${input}`;
+            // Recuperar el nombre de usuario de localStorage
+            const userName = localStorage.getItem("username") || "Usuario desconocido";
+            const newMessage = `${userName}: ${input}`;
+
             setMessages((prevMessages) => [
                 ...prevMessages,
                 { text: newMessage, sender: 'user' },

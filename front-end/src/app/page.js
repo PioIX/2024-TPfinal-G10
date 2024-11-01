@@ -27,7 +27,6 @@ const GameRoom = () => {
     event.preventDefault();
     if (validCodes.includes(gameCode) && userName.trim()) {
       try {
-
         await fetch('http://localhost:4000/guardarNombre', {
           method: 'POST',
           headers: {
@@ -36,8 +35,10 @@ const GameRoom = () => {
           body: JSON.stringify({ nombre: userName }),
         });
 
-        console.log('Unido a la sala con código:', gameCode);
+        // Guardar el nombre en localStorage
         localStorage.setItem("username", userName);
+
+        // Redirigir al usuario
         window.location.href = "http://localhost:3000/page"; 
         setError('');
       } catch (err) {
@@ -76,7 +77,6 @@ const GameRoom = () => {
           throw new Error('Error al crear la sala');
         }
 
-        
         await fetch('http://localhost:4000/guardarNombre', {
           method: 'POST',
           headers: {

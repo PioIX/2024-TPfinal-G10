@@ -12,6 +12,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     const [currentPath, setCurrentPath] = useState([]);
     const [isEraser, setIsEraser] = useState(false);
     const [isFilling, setIsFilling] = useState(false);
+    const [backgroundColor] = useState("#FFFFFF"); // Use fixed background color
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -21,8 +22,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         setContext(ctx);
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawBackground(ctx);
     }, []);
 
     useEffect(() => {
@@ -45,14 +45,17 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         };
     }, [actions]);
 
+    const drawBackground = (ctx) => {
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    };
+
     const startDrawing = (e) => {
-        if (disabled) return;
-        if (context) {
-            context.beginPath();
-            context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-            setDrawing(true);
-            setCurrentPath([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
-        }
+        if (disabled || isFilling) return;
+        context.beginPath();
+        context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+        setDrawing(true);
+        setCurrentPath([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
     };
 
     const draw = (e) => {
@@ -67,7 +70,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
 
         const lastPoint = currentPath[currentPath.length - 1];
 
-        ctx.strokeStyle = isEraser ? "#FFFFFF" : currentColor;
+        ctx.strokeStyle = isEraser ? backgroundColor : currentColor;
         ctx.lineWidth = isEraser ? lineWidth * 2 : lineWidth;
 
         ctx.beginPath();
@@ -84,13 +87,11 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
             setActions((prev) => [...prev, { path: currentPath, color: currentColor, lineWidth }]);
             setCurrentPath([]);
         }
-        context.closePath();
     };
 
     const undoDrawing = () => {
         if (actions.length > 0) {
-            const newActions = [...actions];
-            newActions.pop();
+            const newActions = actions.slice(0, -1);
             setActions(newActions);
             redrawCanvas(newActions);
         }
@@ -99,8 +100,8 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     const redrawCanvas = (actions) => {
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        drawBackground(ctx);
+
         actions.forEach(({ path, color, lineWidth }) => {
             ctx.beginPath();
             ctx.strokeStyle = color;
@@ -118,8 +119,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         setCurrentPath([]);
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        drawBackground(ctx);
     };
 
     const saveCanvas = () => {
@@ -199,6 +199,16 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
 
     const colors = ["#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#800080", "#FFA500", "#FFC0CB"];
 
+    const handleCanvasClick = (e) => {
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x = Math.floor(e.clientX - rect.left);
+        const y = Math.floor(e.clientY - rect.top);
+        
+        if (isFilling) {
+            fillArea(x, y);
+        }
+    };
+
     return (
         <div className={styles.container}>
             <canvas
@@ -207,13 +217,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
                 onMouseMove={draw}
                 onMouseUp={finishDrawing}
                 onMouseOut={finishDrawing}
-                onClick={(e) => {
-                    const rect = canvasRef.current.getBoundingClientRect();
-                    fillArea(
-                        Math.floor(e.clientX - rect.left),
-                        Math.floor(e.clientY - rect.top)
-                    );
-                }}
+                onClick={handleCanvasClick}
                 className={styles.canvas}
                 style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }}
             />
@@ -276,12 +280,7 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
                 <button
                     onClick={() => {
                         if (!disabled) {
-                            setIsFilling((prev) => {
-                                if (prev) {
-                                    setCurrentColor("#000000");
-                                }
-                                return !prev;
-                            });
+                            setIsFilling(prev => !prev);
                         }
                     }}
                     className={styles.fillButton}
@@ -291,11 +290,11 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
                 </button>
             </div>
             <div className={styles.actionButtons}>
-                <button className={styles.undoButton} onClick={undoDrawing} disabled={disabled}>
-                    Volver
-                </button>
                 <button className={styles.clearButton} onClick={clearDrawing} disabled={disabled}>
                     Borrar
+                </button>
+                <button onClick={undoDrawing} className={styles.undoButton} disabled={disabled || actions.length === 0}>
+                    Deshacer
                 </button>
                 <button onClick={saveCanvas} className={styles.saveButton} disabled={disabled}>
                     Guardar
