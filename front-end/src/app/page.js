@@ -8,8 +8,7 @@ const GameRoom = () => {
   const [error, setError] = useState('');
   const [validCodes, setValidCodes] = useState([]);
   const [maxPlayers, setMaxPlayers] = useState('');
-  const [points, setPoints] = useState(0);
-  const [pointsMessage, setPointsMessage] = useState(''); // Estado para el mensaje de puntos
+
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -36,7 +35,6 @@ const GameRoom = () => {
           },
           body: JSON.stringify({ nombre: userName }),
         });
-        console.log('Unido a la sala con código:', gameCode);
         localStorage.setItem("username", userName);
         window.location.href = "http://localhost:3000/page"; 
         setError('');
@@ -63,17 +61,13 @@ const GameRoom = () => {
 
     if (gameCode && maxPlayers && userName.trim()) {
       try {
-        const response = await fetch('http://localhost:4000/crearSala', {
+        await fetch('http://localhost:4000/crearSala', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ codigo: gameCode, cantidad_personas: parseInt(maxPlayers) }),
         });
-
-        if (!response.ok) {
-          throw new Error('Error al crear la sala');
-        }
 
         await fetch('http://localhost:4000/guardarNombre', {
           method: 'POST',
@@ -96,24 +90,11 @@ const GameRoom = () => {
     } else {
       setError('Por favor, ingrese un código, un número de jugadores y su nombre.');
     }
-  };
-
-  const handleGuess = (isCorrect) => {
-    if (isCorrect) {
-      setPoints(prevPoints => prevPoints + 100);
-      setPointsMessage('¡Has ganado 100 puntos!');
-      setTimeout(() => setPointsMessage(''), 3000); // Limpiar el mensaje después de 3 segundos
-    } else {
-      setPointsMessage('Intenta de nuevo.');
-      setTimeout(() => setPointsMessage(''), 3000);
-    }
-  };
+  }
 
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>ArtAttack</h2>
-      <h3>Puntos: {points}</h3>
-      {pointsMessage && <p className={styles.pointsMessage}>{pointsMessage}</p>} {/* Mostrar el mensaje de puntos */}
       <div className={styles.form}>
         <form onSubmit={handleJoinGame}>
           <label htmlFor="gameCode" className={styles.label}>Código del Juego</label>
@@ -190,7 +171,7 @@ const GameRoom = () => {
         </form>
         {error && <p className={styles.error}>{error}</p>}
       </dialog>
-      <button onClick={() => handleGuess(true)}>Adivinar</button> {/* Botón de adivinanza */}
+
     </div>
   );
 };

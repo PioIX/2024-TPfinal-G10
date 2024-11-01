@@ -12,6 +12,8 @@ export default function Home() {
     const [clearCanvas, setClearCanvas] = useState(false);
     const [message, setMessage] = useState("");
     const [canvasEnabled, setCanvasEnabled] = useState(false); // Nuevo estado
+    const [points, setPoints] = useState(0);
+    const [pointsMessage, setPointsMessage] = useState('');
 
     useEffect(() => {
         const fetchPalabras = async () => {
@@ -76,6 +78,8 @@ export default function Home() {
 
     const handleCorrectGuess = () => {
         setMessage("¡Palabra correcta!");
+        setPoints(points + 100)
+        console.log(points)
         resetGame();
         setTimeout(() => {
             setMessage("");
@@ -100,6 +104,7 @@ export default function Home() {
                                 {palabra}
                             </button>
                         ))}
+                        <h3>Points: {points}</h3>
                     </div>
                 )}
             </div>
@@ -112,6 +117,7 @@ export default function Home() {
             <div className={styles.flexContainer}>
                 <div className="pizarronContainer">
                     <PizarronCanvas clearCanvas={clearCanvas} disabled={!canvasEnabled} /> {/* Deshabilitar el canvas */}
+                    <h3>Points: {points}</h3>
                 </div>
                 <div className="chatContainer">
                     <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} />
