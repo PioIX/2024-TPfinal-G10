@@ -11,9 +11,9 @@ export default function Home() {
     const [segundos, setSegundos] = useState(45);
     const [clearCanvas, setClearCanvas] = useState(false);
     const [message, setMessage] = useState("");
-    const [canvasEnabled, setCanvasEnabled] = useState(false); // Nuevo estado
+    const [canvasEnabled, setCanvasEnabled] = useState(false);
     const [points, setPoints] = useState(0);
-    const [pointsMessage, setPointsMessage] = useState('');
+    const [timerActive, setTimerActive] = useState(false);
 
     useEffect(() => {
         const fetchPalabras = async () => {
@@ -44,19 +44,22 @@ export default function Home() {
 
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
-        setCanvasEnabled(true); // Habilitar el canvas
+        setCanvasEnabled(true);
+        setMessage(""); // Limpiar mensaje al seleccionar nueva palabra
         iniciarTemporizador();
     };
 
     const iniciarTemporizador = () => {
         setSegundos(45);
+        setTimerActive(true);
         const intervalId = setInterval(() => {
             setSegundos((prev) => {
                 if (prev === 1) {
                     clearInterval(intervalId);
-                    resetGame();
                     setMessage("Se terminó el tiempo!");
-                    return 0; // Opcionalmente puedes mantener en 0
+                    setTimerActive(false);
+                    resetGame();
+                    return 0;
                 }
                 return prev - 1;
             });
@@ -73,16 +76,15 @@ export default function Home() {
         
         seleccionarTresPalabras(palabras);
         setPalabraActual("");
-        setCanvasEnabled(false); // Deshabilitar el canvas
+        setCanvasEnabled(false);
     };
 
     const handleCorrectGuess = () => {
         setMessage("¡Palabra correcta!");
-        setPoints(points + 100)
-        console.log(points)
+        setPoints(points + 100);
         resetGame();
         setTimeout(() => {
-            setMessage("");
+            setMessage(""); // Limpiar el mensaje después de 2 segundos
         }, 2000);
     };
 
@@ -94,7 +96,7 @@ export default function Home() {
                 {palabraActual ? (
                     <>
                         <p className={styles.word}>{palabraActual}</p>
-                        <h3 className={timerClass}>{segundos} segundos</h3>
+                        {timerActive && <h3 className={timerClass}>{segundos} segundos</h3>}
                     </>
                 ) : (
                     <div className={styles.seleccionPalabra}>
@@ -116,7 +118,7 @@ export default function Home() {
 
             <div className={styles.flexContainer}>
                 <div className="pizarronContainer">
-                    <PizarronCanvas clearCanvas={clearCanvas} disabled={!canvasEnabled} /> {/* Deshabilitar el canvas */}
+                    <PizarronCanvas clearCanvas={clearCanvas} disabled={!canvasEnabled} />
                     <h3>Points: {points}</h3>
                 </div>
                 <div className="chatContainer">
