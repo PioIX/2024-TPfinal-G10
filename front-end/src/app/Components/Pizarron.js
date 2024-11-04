@@ -2,17 +2,15 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from './PizarronCanvas.module.css';
 
-export default function PizarronCanvas({ clearCanvas, disabled }) {
+export default function PizarronCanvas({ clearCanvas }) {
     const canvasRef = useRef(null);
     const [context, setContext] = useState(null);
     const [drawing, setDrawing] = useState(false);
-    const [currentColor, setCurrentColor] = useState("#000000");
+    const [currentColor, setCurrentColor] = useState("black");
     const [lineWidth, setLineWidth] = useState(3);
     const [actions, setActions] = useState([]);
     const [currentPath, setCurrentPath] = useState([]);
     const [isEraser, setIsEraser] = useState(false);
-    const [isFilling, setIsFilling] = useState(false);
-    const [backgroundColor] = useState("#FFFFFF"); // Use fixed background color
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -22,7 +20,6 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         setContext(ctx);
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
-        drawBackground(ctx);
     }, []);
 
     useEffect(() => {
@@ -31,35 +28,17 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         }
     }, [clearCanvas]);
 
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.ctrlKey && e.key === 'z') {
-                e.preventDefault();
-                undoDrawing();
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [actions]);
-
-    const drawBackground = (ctx) => {
-        ctx.fillStyle = backgroundColor;
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    };
-
     const startDrawing = (e) => {
-        if (disabled || isFilling) return;
-        context.beginPath();
-        context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-        setDrawing(true);
-        setCurrentPath([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
+        if (context) {
+            context.beginPath();
+            context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+            setDrawing(true);
+            setCurrentPath([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
+        }
     };
 
     const draw = (e) => {
-        if (disabled || !drawing || isFilling) return;
+        if (!drawing) return;
         const x = e.nativeEvent.offsetX;
         const y = e.nativeEvent.offsetY;
         smoothDraw(context, x, y);
@@ -70,11 +49,12 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
 
         const lastPoint = currentPath[currentPath.length - 1];
 
-        ctx.strokeStyle = isEraser ? backgroundColor : currentColor;
+        ctx.strokeStyle = isEraser ? "white" : currentColor;
         ctx.lineWidth = isEraser ? lineWidth * 2 : lineWidth;
 
         ctx.beginPath();
         ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.quadraticCurveTo(lastPoint.x, lastPoint.y, (lastPoint.x + x) / 2, (lastPoint.y + y) / 2);
         ctx.lineTo(x, y);
         ctx.stroke();
 
@@ -87,11 +67,13 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
             setActions((prev) => [...prev, { path: currentPath, color: currentColor, lineWidth }]);
             setCurrentPath([]);
         }
+        context.closePath();
     };
 
     const undoDrawing = () => {
         if (actions.length > 0) {
-            const newActions = actions.slice(0, -1);
+            const newActions = [...actions];
+            newActions.pop();
             setActions(newActions);
             redrawCanvas(newActions);
         }
@@ -100,8 +82,6 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     const redrawCanvas = (actions) => {
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        drawBackground(ctx);
-
         actions.forEach(({ path, color, lineWidth }) => {
             ctx.beginPath();
             ctx.strokeStyle = color;
@@ -119,7 +99,6 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         setCurrentPath([]);
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        drawBackground(ctx);
     };
 
     const saveCanvas = () => {
@@ -132,57 +111,32 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     };
 
     const fillArea = (x, y) => {
-        if (!isFilling) return;
-
         const ctx = canvasRef.current.getContext("2d");
         const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-        const targetColor = [
-            imageData.data[(y * imageData.width + x) * 4],
-            imageData.data[(y * imageData.width + x) * 4 + 1],
-            imageData.data[(y * imageData.width + x) * 4 + 2],
-        ];
+        const targetColor = ctx.getImageData(x, y, 1, 1).data;
         const fillColor = hexToRgb(currentColor);
 
-        if (
-            targetColor[0] === fillColor.r &&
-            targetColor[1] === fillColor.g &&
-            targetColor[2] === fillColor.b
-        ) {
-            return;
-        }
-
         const stack = [{ x, y }];
-        const offsets = [
-            { dx: 0, dy: 0 },
-            { dx: 1, dy: 0 },
-            { dx: -1, dy: 0 },
-            { dx: 0, dy: 1 },
-            { dx: 0, dy: -1 },
-            { dx: 1, dy: 1 },
-            { dx: 1, dy: -1 },
-            { dx: -1, dy: 1 },
-            { dx: -1, dy: -1 }
-        ];
 
         while (stack.length > 0) {
             const { x: sx, y: sy } = stack.pop();
             const index = (sy * imageData.width + sx) * 4;
 
-            if (
-                sx < 0 || sx >= imageData.width || sy < 0 || sy >= imageData.height ||
-                imageData.data[index] !== targetColor[0] ||
-                imageData.data[index + 1] !== targetColor[1] ||
-                imageData.data[index + 2] !== targetColor[2]
-            ) continue;
+            if (sx < 0 || sx >= imageData.width || sy < 0 || sy >= imageData.height) continue;
+            if (imageData.data[index] === targetColor[0] &&
+                imageData.data[index + 1] === targetColor[1] &&
+                imageData.data[index + 2] === targetColor[2]) {
 
-            imageData.data[index] = fillColor.r;
-            imageData.data[index + 1] = fillColor.g;
-            imageData.data[index + 2] = fillColor.b;
-            imageData.data[index + 3] = 255;
+                imageData.data[index] = fillColor.r;
+                imageData.data[index + 1] = fillColor.g;
+                imageData.data[index + 2] = fillColor.b;
+                imageData.data[index + 3] = 255; // Alpha
 
-            offsets.forEach(({ dx, dy }) => {
-                stack.push({ x: sx + dx, y: sy + dy });
-            });
+                stack.push({ x: sx + 1, y: sy });
+                stack.push({ x: sx - 1, y: sy });
+                stack.push({ x: sx, y: sy + 1 });
+                stack.push({ x: sx, y: sy - 1 });
+            }
         }
 
         ctx.putImageData(imageData, 0, 0);
@@ -199,16 +153,6 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
 
     const colors = ["#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#800080", "#FFA500", "#FFC0CB"];
 
-    const handleCanvasClick = (e) => {
-        const rect = canvasRef.current.getBoundingClientRect();
-        const x = Math.floor(e.clientX - rect.left);
-        const y = Math.floor(e.clientY - rect.top);
-        
-        if (isFilling) {
-            fillArea(x, y);
-        }
-    };
-
     return (
         <div className={styles.container}>
             <canvas
@@ -217,86 +161,69 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
                 onMouseMove={draw}
                 onMouseUp={finishDrawing}
                 onMouseOut={finishDrawing}
-                onClick={handleCanvasClick}
                 className={styles.canvas}
-                style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }}
             />
             <div className={styles.controls}>
                 {colors.map(color => (
                     <button
                         key={color}
                         onClick={() => {
-                            if (!disabled) {
-                                setIsEraser(false);
-                                setCurrentColor(color);
-                            }
+                            setIsEraser(false);
+                            setCurrentColor(color);
                         }}
                         className={styles.colorButton}
                         style={{ backgroundColor: color }}
-                        disabled={disabled}
                     />
                 ))}
                 <input
                     type="color"
                     value={currentColor}
                     onChange={(e) => {
-                        if (!disabled) {
-                            setIsEraser(false);
-                            setCurrentColor(e.target.value);
-                        }
+                        setIsEraser(false);
+                        setCurrentColor(e.target.value);
                     }}
                     className={styles.colorInput}
-                    disabled={disabled}
                 />
                 <input
                     type="range"
                     min="1"
-                    max="10"
+                    max="150"
                     value={lineWidth}
-                    onChange={(e) => {
-                        if (!disabled) {
-                            setLineWidth(e.target.value);
-                        }
-                    }}
+                    onChange={(e) => setLineWidth(e.target.value)}
                     className={styles.rangeInput}
-                    disabled={disabled}
                 />
                 <button
                     onClick={() => {
-                        if (!disabled) {
-                            setIsEraser(!isEraser);
-                            if (isEraser) {
-                                setCurrentColor("#000000");
-                            } else {
-                                setCurrentColor(currentColor);
-                            }
+                        setIsEraser(!isEraser);
+                        if (!isEraser) {
+                            setCurrentColor("white");
                         }
                     }}
                     className={styles.eraserButton}
-                    disabled={disabled}
                 >
                     {isEraser ? "Usar lápiz" : "Usar goma"}
                 </button>
                 <button
-                    onClick={() => {
-                        if (!disabled) {
-                            setIsFilling(prev => !prev);
-                        }
+                    onClick={(e) => {
+                        const rect = canvasRef.current.getBoundingClientRect();
+                        fillArea(
+                            Math.floor(e.clientX - rect.left),
+                            Math.floor(e.clientY - rect.top)
+                        );
                     }}
                     className={styles.fillButton}
-                    disabled={disabled}
                 >
-                    {isFilling ? "Desactivar Rellenar" : "Activar Rellenar"}
+                    Rellenar
                 </button>
             </div>
             <div className={styles.actionButtons}>
-                <button className={styles.clearButton} onClick={clearDrawing} disabled={disabled}>
+                <button className={styles.undoButton} onClick={undoDrawing}>
+                    Volver
+                </button>
+                <button className={styles.clearButton} onClick={clearDrawing}>
                     Borrar
                 </button>
-                <button onClick={undoDrawing} className={styles.undoButton} disabled={disabled || actions.length === 0}>
-                    Deshacer
-                </button>
-                <button onClick={saveCanvas} className={styles.saveButton} disabled={disabled}>
+                <button onClick={saveCanvas} className={styles.saveButton}>
                     Guardar
                 </button>
             </div>
