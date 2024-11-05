@@ -3,104 +3,198 @@
     flex-direction: column;
     align-items: center;
     margin: 10px;
+    font-family: 'Poppins', sans-serif; /* Fuente moderna y agradable */
 }
 
 .canvas {
-    border: 2px solid #000000;
-    border-radius: 8px;
-    background-color: #ffffff;
-    cursor: crosshair;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 2px solid #000000; /* Borde negro */
+    border-radius: 12px; /* Bordes redondeados */
+    background-color: #ffffff; /* Fondo blanco */
+    cursor: crosshair; /* Cursor para dibujar */
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    transition: box-shadow 0.3s ease-in-out; /* Transición suave para la sombra */
+}
+
+.canvas:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Aumentar sombra al pasar el mouse */
 }
 
 .controls {
     display: flex;
     align-items: center;
-    margin: 10px 0;
-}
-
-.fillButton {
-    background-color: lightgray;
-    color: black;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-left: 10px;
-    transition: background-color 0.3s;
-}
-
-.saveButton {
-    background-color: #28a745; 
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-left: 10px;
-    transition: background-color 0.3s;
-}
-
-.saveButton:hover {
-    background-color: #218838; 
-}
-
-.saveButton:active {
-    background-color: #1e7e34;
+    margin: 15px 0;
 }
 
 .colorButton {
-    width: 40px;
-    height: 40px;
-    margin-right: 5px;
-    border: none;
+    width: 45px;
+    height: 45px;
+    margin-right: 10px;
+    border: 2px solid #333; /* Borde oscuro por defecto */
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 12px; /* Bordes más redondeados para botones */
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s ease;
 }
 
-.colorInput {
-    margin-right: 10px;
-    border: 2px solid #ccc;
-    border-radius: 4px;
-    width: 50px;
+.colorButton:hover {
+    transform: scale(1.1); /* Aumentar el tamaño de los botones al pasar el mouse */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Sombra al pasar el mouse */
+    border-color: #000; /* Borde más oscuro al pasar el mouse */
+}
+
+.colorButton:active {
+    transform: scale(0.95); /* Efecto de 'presionar' el botón */
+}
+
+.backgroundColorSelector button {
+    margin: 5px;
+    border-radius: 50%; /* Redondea los botones para darles forma circular */
+    width: 40px;
+    height: 40px;
+    border: 1px solid #000000; /* Borde oscuro por defecto */
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s ease;
+}
+
+.backgroundColorSelector button:hover {
+    transform: scale(1.1); /* Aumenta el tamaño al pasar el mouse */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Sombra suave */
+    border-color: #000; /* Borde más oscuro al pasar el mouse */
+}
+
+.colorPicker {
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 5px;
+    margin-left: 15px;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.colorPicker:hover {
+    border-color: #888;
 }
 
 .rangeInput {
-    margin: 0 10px;
+    margin: 0 15px;
+    width: 100px;
 }
 
 .eraserButton {
-    background-color: lightgray;
-    color: black;
-    padding: 10px 15px;
+    background-color: #f4f4f9;
+    color: #333;
+    padding: 12px 18px;
     margin-left: 10px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s ease;
+}
+
+.eraserButton:hover {
+    background-color: #e1e1e6; /* Color más oscuro para hover */
+    transform: scale(1.05); /* Leve aumento al pasar el mouse */
+}
+
+.eraserButton:active {
+    transform: scale(0.98); /* Efecto de 'presionar' */
 }
 
 .actionButtons {
     display: flex;
     justify-content: center;
-    margin-top: 10px;
+    margin-top: 20px;
+}
+
+.undoButton,
+.clearButton,
+.saveButton {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s ease, box-shadow 0.3s ease;
+    margin: 5px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.undoButton:hover,
+.clearButton:hover,
+.saveButton:hover {
+    transform: scale(1.05); /* Efecto de aumentar tamaño al pasar el mouse */
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); /* Sombra al pasar el mouse */
+}
+
+.undoButton:active,
+.clearButton:active,
+.saveButton:active {
+    transform: scale(0.98);
 }
 
 .undoButton {
     background-color: #007bff;
     color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 10px;
-    margin-left: 20px;
 }
 
 .clearButton {
     background-color: #dc3545;
     color: white;
-    padding: 10px 20px;
+}
+
+.saveButton {
+    background-color: #28a745;
+    color: white;
+}
+
+.undoButton:hover {
+    background-color: #0056b3;
+}
+
+.clearButton:hover {
+    background-color: #c82333;
+}
+
+.saveButton:hover {
+    background-color: #218838;
+}
+
+.undoButton:active {
+    background-color: #0056b3;
+}
+
+.clearButton:active {
+    background-color: #c82333;
+}
+
+.saveButton:active {
+    background-color: #218838;
+}
+
+.backgroundColorSelector {
+    display: flex; /* Esto hace que los botones se alineen horizontalmente */
+    flex-wrap: wrap; /* Si hay muchos botones, se envuelven a la siguiente línea */
+    justify-content: center; /* Centra los botones horizontalmente */
+    margin: 20px 0;
+}
+
+.backgroundColorSelector h4 {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.backgroundColorSelector button {
+    margin: 5px;
+    border-radius: 50%; /* Redondea los botones para darles forma circular */
+    width: 40px;
+    height: 40px;
     border: none;
-    border-radius: 4px;
     cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s ease;
+}
+
+.backgroundColorSelector button:hover {
+    transform: scale(1.1); /* Aumenta el tamaño al pasar el mouse */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    border-color: #000; /* Borde más oscuro al pasar el mouse */
 }

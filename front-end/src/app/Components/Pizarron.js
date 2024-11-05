@@ -2,15 +2,19 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from './PizarronCanvas.module.css';
 
-export default function PizarronCanvas({ clearCanvas }) {
+export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackground }) {
     const canvasRef = useRef(null);
     const [context, setContext] = useState(null);
     const [drawing, setDrawing] = useState(false);
-    const [currentColor, setCurrentColor] = useState("black");
+    const [currentColor, setCurrentColor] = useState("black"); // Color inicial de pintura
     const [lineWidth, setLineWidth] = useState(3);
     const [actions, setActions] = useState([]);
     const [currentPath, setCurrentPath] = useState([]);
     const [isEraser, setIsEraser] = useState(false);
+    const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
+    const [backgroundChanged, setBackgroundChanged] = useState(false); // Controla si el fondo ya fue cambiado
+    const [isBackgroundSet, setIsBackgroundSet] = useState(false); // Indica si el fondo está configurado
+    const [timerStarted, setTimerStarted] = useState(false); // Estado para el cronómetro
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -20,7 +24,16 @@ export default function PizarronCanvas({ clearCanvas }) {
         setContext(ctx);
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
-    }, []);
+
+        if (isBackgroundSet) {
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (!timerStarted) {
+                // Iniciar el cronómetro solo cuando el fondo haya sido seleccionado
+                startTimer();
+            }
+        }
+    }, [isBackgroundSet]); // Este efecto solo se ejecuta cuando se cambia el fondo
 
     useEffect(() => {
         if (clearCanvas) {
@@ -28,8 +41,20 @@ export default function PizarronCanvas({ clearCanvas }) {
         }
     }, [clearCanvas]);
 
+    // Cambiar el fondo solo si es permitido y aún no ha cambiado
+    const changeBackgroundColor = (newColor) => {
+        if (canChangeBackground && !backgroundChanged) {
+            setBackgroundColor(newColor);
+            const ctx = canvasRef.current.getContext("2d");
+            ctx.fillStyle = newColor;
+            ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            setBackgroundChanged(true); // Marcar que el fondo ya ha sido cambiado
+            setIsBackgroundSet(true); // El fondo ya está configurado, permitir el dibujo
+        }
+    };
+
     const startDrawing = (e) => {
-        if (context) {
+        if (context && !disabled && isBackgroundSet) {
             context.beginPath();
             context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
             setDrawing(true);
@@ -38,7 +63,7 @@ export default function PizarronCanvas({ clearCanvas }) {
     };
 
     const draw = (e) => {
-        if (!drawing) return;
+        if (!drawing || disabled || !isBackgroundSet) return;
         const x = e.nativeEvent.offsetX;
         const y = e.nativeEvent.offsetY;
         smoothDraw(context, x, y);
@@ -49,7 +74,8 @@ export default function PizarronCanvas({ clearCanvas }) {
 
         const lastPoint = currentPath[currentPath.length - 1];
 
-        ctx.strokeStyle = isEraser ? "white" : currentColor;
+        // Usar el color del fondo para la goma
+        ctx.strokeStyle = isEraser ? backgroundColor : currentColor; // Si es goma, usa el color de fondo
         ctx.lineWidth = isEraser ? lineWidth * 2 : lineWidth;
 
         ctx.beginPath();
@@ -82,6 +108,8 @@ export default function PizarronCanvas({ clearCanvas }) {
     const redrawCanvas = (actions) => {
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         actions.forEach(({ path, color, lineWidth }) => {
             ctx.beginPath();
             ctx.strokeStyle = color;
@@ -99,6 +127,9 @@ export default function PizarronCanvas({ clearCanvas }) {
         setCurrentPath([]);
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        setBackgroundChanged(false); // Reset background state on clear
     };
 
     const saveCanvas = () => {
@@ -110,51 +141,42 @@ export default function PizarronCanvas({ clearCanvas }) {
         link.click();
     };
 
-    const fillArea = (x, y) => {
-        const ctx = canvasRef.current.getContext("2d");
-        const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-        const targetColor = ctx.getImageData(x, y, 1, 1).data;
-        const fillColor = hexToRgb(currentColor);
+    // Lista de colores básicos disponibles
+    const basicColors = [
+        "#000000", // Negro
+        "#FF0000", // Rojo
+        "#00FF00", // Verde
+        "#0000FF", // Azul
+        "#FFFF00", // Amarillo
+        "#FFA500", // Naranja
+        "#800080", // Morado
+        "#FFC0CB", // Rosa
+        "#FFFFFF", // Blanco
+    ];
 
-        const stack = [{ x, y }];
+    // Filtrar el color de fondo para no aparecer en la paleta de colores
+    const availableColors = basicColors.filter(color => color !== backgroundColor);
 
-        while (stack.length > 0) {
-            const { x: sx, y: sy } = stack.pop();
-            const index = (sy * imageData.width + sx) * 4;
-
-            if (sx < 0 || sx >= imageData.width || sy < 0 || sy >= imageData.height) continue;
-            if (imageData.data[index] === targetColor[0] &&
-                imageData.data[index + 1] === targetColor[1] &&
-                imageData.data[index + 2] === targetColor[2]) {
-
-                imageData.data[index] = fillColor.r;
-                imageData.data[index + 1] = fillColor.g;
-                imageData.data[index + 2] = fillColor.b;
-                imageData.data[index + 3] = 255; // Alpha
-
-                stack.push({ x: sx + 1, y: sy });
-                stack.push({ x: sx - 1, y: sy });
-                stack.push({ x: sx, y: sy + 1 });
-                stack.push({ x: sx, y: sy - 1 });
-            }
-        }
-
-        ctx.putImageData(imageData, 0, 0);
+    const startTimer = () => {
+        console.log("El cronómetro ha comenzado.");
+        setTimerStarted(true);  // El cronómetro ha comenzado
     };
-
-    const hexToRgb = (hex) => {
-        const bigint = parseInt(hex.slice(1), 16);
-        return {
-            r: (bigint >> 16) & 255,
-            g: (bigint >> 8) & 255,
-            b: bigint & 255,
-        };
-    };
-
-    const colors = ["#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#800080", "#FFA500", "#FFC0CB"];
 
     return (
         <div className={styles.container}>
+            {canChangeBackground && !backgroundChanged && (
+                <div className={styles.backgroundColorSelector}>
+                    <h4>Elige el color de fondo:</h4>
+                    {basicColors.map((color) => (
+                        <button
+                            key={color}
+                            onClick={() => changeBackgroundColor(color)}
+                            style={{ backgroundColor: color, width: 30, height: 30, border: 'none' }}
+                            className={styles.colorButton}
+                        />
+                    ))}
+                </div>
+            )}
             <canvas
                 ref={canvasRef}
                 onMouseDown={startDrawing}
@@ -164,7 +186,8 @@ export default function PizarronCanvas({ clearCanvas }) {
                 className={styles.canvas}
             />
             <div className={styles.controls}>
-                {colors.map(color => (
+                {/* Colores básicos, excluyendo el color de fondo */}
+                {availableColors.map((color) => (
                     <button
                         key={color}
                         onClick={() => {
@@ -175,15 +198,15 @@ export default function PizarronCanvas({ clearCanvas }) {
                         style={{ backgroundColor: color }}
                     />
                 ))}
+
+                {/* Selector de color RGB para pintar */}
                 <input
                     type="color"
                     value={currentColor}
-                    onChange={(e) => {
-                        setIsEraser(false);
-                        setCurrentColor(e.target.value);
-                    }}
-                    className={styles.colorInput}
+                    onChange={(e) => setCurrentColor(e.target.value)} // Cambiar color de la pintura
+                    className={styles.colorPicker}
                 />
+
                 <input
                     type="range"
                     min="1"
@@ -196,24 +219,13 @@ export default function PizarronCanvas({ clearCanvas }) {
                     onClick={() => {
                         setIsEraser(!isEraser);
                         if (!isEraser) {
-                            setCurrentColor("white");
+                            setCurrentColor(backgroundColor); // El color de la goma es el color de fondo
                         }
                     }}
                     className={styles.eraserButton}
+                    style={{ backgroundColor: isEraser ? backgroundColor : "white" }} // Cambia el color del botón de la goma al color de fondo cuando está activa
                 >
                     {isEraser ? "Usar lápiz" : "Usar goma"}
-                </button>
-                <button
-                    onClick={(e) => {
-                        const rect = canvasRef.current.getBoundingClientRect();
-                        fillArea(
-                            Math.floor(e.clientX - rect.left),
-                            Math.floor(e.clientY - rect.top)
-                        );
-                    }}
-                    className={styles.fillButton}
-                >
-                    Rellenar
                 </button>
             </div>
             <div className={styles.actionButtons}>

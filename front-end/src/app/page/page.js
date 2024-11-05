@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import PizarronCanvas from "../Components/Pizarron";
 import Chat from "../Components/Chat";
-import styles from './page.module.css';
+import styles from "./page.module.css";
 
 export default function Home() {
     const [palabras, setPalabras] = useState([]);
@@ -12,8 +12,9 @@ export default function Home() {
     const [clearCanvas, setClearCanvas] = useState(false);
     const [message, setMessage] = useState("");
     const [canvasEnabled, setCanvasEnabled] = useState(false);
-    const [usoPalabra, setUsoPalabra] = useState(0); 
-    const [intervalId, setIntervalId] = useState(null); 
+    const [usoPalabra, setUsoPalabra] = useState(0);
+    const [canChangeBackground, setCanChangeBackground] = useState(false); // Permitir cambiar el fondo
+    const [intervalId, setIntervalId] = useState(null);
 
     useEffect(() => {
         const fetchPalabras = async () => {
@@ -45,6 +46,7 @@ export default function Home() {
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
         setCanvasEnabled(true);
+        setCanChangeBackground(true); // Permitir cambiar el fondo
         setUsoPalabra((prev) => prev + 1);
         iniciarTemporizador();
     };
@@ -53,7 +55,7 @@ export default function Home() {
         if (intervalId) {
             clearInterval(intervalId);
         }
-        
+
         setSegundos(60);
         const newIntervalId = setInterval(() => {
             setSegundos((prev) => {
@@ -66,8 +68,8 @@ export default function Home() {
                 return prev - 1;
             });
         }, 1000);
-        
-        setIntervalId(newIntervalId); 
+
+        setIntervalId(newIntervalId);
     };
 
     const resetGame = () => {
@@ -75,12 +77,13 @@ export default function Home() {
         setTimeout(() => {
             setClearCanvas(false);
         }, 0);
-        
+
         seleccionarTresPalabras(palabras);
         setPalabraActual("");
         setCanvasEnabled(false);
-        setUsoPalabra(0); 
-        
+        setCanChangeBackground(false); // Desactivar cambio de fondo
+        setUsoPalabra(0);
+
         if (intervalId) {
             clearInterval(intervalId);
             setIntervalId(null);
@@ -140,7 +143,11 @@ export default function Home() {
 
             <div className={styles.flexContainer}>
                 <div className="pizarronContainer">
-                    <PizarronCanvas clearCanvas={clearCanvas} disabled={!canvasEnabled} />
+                    <PizarronCanvas 
+                        clearCanvas={clearCanvas} 
+                        disabled={!canvasEnabled} 
+                        canChangeBackground={canChangeBackground} 
+                    />
                 </div>
                 <div className="chatContainer">
                     <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} />
