@@ -1,31 +1,11 @@
 "use client"; 
 import React, { useEffect, useRef, useState } from "react";
-import styles from './Chat.module.css'; // Importar el archivo CSS
+import styles from './Chat.module.css';
 
 export default function Chat({ palabraActual, onCorrectGuess }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
-    const [lastUserName, setLastUserName] = useState(""); // Estado para el último nombre de usuario
     const messageEndRef = useRef(null);
-
-    // Obtener el último nombre guardado al montar el componente
-    useEffect(() => {
-        const fetchLastUserName = async () => {
-            try {
-                const response = await fetch('http://localhost:4000/ultimoNombre');
-                const data = await response.json();
-                if (data && data.nombre) {
-                    setLastUserName(data.nombre);
-                } else {
-                    console.warn('No se encontró un nombre en la respuesta');
-                }
-            } catch (err) {
-                console.error('Error fetching last user name:', err);
-            }
-        };
-
-        fetchLastUserName();
-    }, []);
 
     const normalizeString = (str) => {
         return str
@@ -62,10 +42,10 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
             let responseMessage = null;
 
             if (normalizedInput === normalizedPalabra) {
-                responseMessage = { text: "palabra correcta", sender: 'bot', className: styles.correctMessage };
-                onCorrectGuess();
+                responseMessage = { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot', className: styles.correctMessage };
+                onCorrectGuess(); // Pasar 100 puntos a la función
             } else if (isCasi(normalizedInput, normalizedPalabra)) {
-                responseMessage = { text: "casi", sender: 'bot', className: styles.casiMessage };
+                responseMessage = { text: "Casi, sigue intentando.", sender: 'bot', className: styles.casiMessage };
             }
 
             const newMessage = `${localStorage.getItem("username")}: ${input}`;
@@ -108,6 +88,7 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
                     Enviar
                 </button>
             </form>
+            <h4>Points: {100}</h4>
         </div>
     );
 }

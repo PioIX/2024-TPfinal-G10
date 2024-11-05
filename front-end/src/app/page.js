@@ -4,10 +4,11 @@ import styles from './page.module.css';
 
 const GameRoom = () => {
   const [gameCode, setGameCode] = useState('');
-  const [userName, setUserName] = useState(''); // Estado para el nombre
+  const [userName, setUserName] = useState('');
   const [error, setError] = useState('');
   const [validCodes, setValidCodes] = useState([]);
   const [maxPlayers, setMaxPlayers] = useState('');
+
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -25,11 +26,8 @@ const GameRoom = () => {
 
   const handleJoinGame = async (event) => {
     event.preventDefault();
-    
-    // Verificar si el código de juego y el nombre son válidos
     if (validCodes.includes(gameCode) && userName.trim()) {
       try {
-        // Guardar el nombre en la base de datos
         await fetch('http://localhost:4000/guardarNombre', {
           method: 'POST',
           headers: {
@@ -37,8 +35,6 @@ const GameRoom = () => {
           },
           body: JSON.stringify({ nombre: userName }),
         });
-
-        console.log('Unido a la sala con código:', gameCode);
         localStorage.setItem("username", userName);
         window.location.href = "http://localhost:3000/page"; 
         setError('');
@@ -53,7 +49,6 @@ const GameRoom = () => {
 
   const handleCreateGame = async (event) => {
     event.preventDefault();
-
     if (validCodes.includes(gameCode)) {
       setError('El código de la sala ya existe. Por favor, elige otro.');
       return;
@@ -64,9 +59,9 @@ const GameRoom = () => {
       return;
     }
 
-    if (gameCode && maxPlayers && userName.trim()) { // Verificar que el nombre no esté vacío
+    if (gameCode && maxPlayers && userName.trim()) {
       try {
-        const response = await fetch('http://localhost:4000/crearSala', {
+        await fetch('http://localhost:4000/crearSala', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -74,11 +69,6 @@ const GameRoom = () => {
           body: JSON.stringify({ codigo: gameCode, cantidad_personas: parseInt(maxPlayers) }),
         });
 
-        if (!response.ok) {
-          throw new Error('Error al crear la sala');
-        }
-
-        // Guardar el nombre al crear el juego
         await fetch('http://localhost:4000/guardarNombre', {
           method: 'POST',
           headers: {
@@ -89,10 +79,10 @@ const GameRoom = () => {
 
         setGameCode('');
         setMaxPlayers('');
-        setUserName(''); // Limpiar el estado del nombre
+        setUserName('');
         document.getElementById('createGameModal').close(); 
         setError('');
-        window.location.href = "/page"; // Redirigir a otra página
+        window.location.href = "/page"; 
       } catch (err) {
         setError('Error al crear la sala.');
         console.error('Error:', err);
@@ -100,7 +90,7 @@ const GameRoom = () => {
     } else {
       setError('Por favor, ingrese un código, un número de jugadores y su nombre.');
     }
-  };
+  }
 
   return (
     <div className={styles.container}>
@@ -181,6 +171,7 @@ const GameRoom = () => {
         </form>
         {error && <p className={styles.error}>{error}</p>}
       </dialog>
+
     </div>
   );
 };
