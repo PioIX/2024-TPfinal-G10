@@ -85,7 +85,7 @@ export default function Home() {
         resetGame();
         setTimeout(() => {
             setMessage(""); // Limpiar el mensaje después de 2 segundos
-        }, 2000);
+        }, 1000);
     };
 
     const timerClass = segundos <= 10 ? styles.timerRed : styles.timerBlack;
