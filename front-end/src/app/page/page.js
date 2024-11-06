@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import PizarronCanvas from "../Components/Pizarron";
 import Chat from "../Components/Chat";
 import styles from "./page.module.css";
+import { useSocket } from "../hooks/useSocket";
+
 
 export default function Home() {
     const [palabras, setPalabras] = useState([]);
@@ -13,8 +15,22 @@ export default function Home() {
     const [message, setMessage] = useState("");
     const [canvasEnabled, setCanvasEnabled] = useState(false);
     const [usoPalabra, setUsoPalabra] = useState(0);
-    const [canChangeBackground, setCanChangeBackground] = useState(false); // Permitir cambiar el fondo
+    const [canChangeBackground, setCanChangeBackground] = useState(false); 
     const [intervalId, setIntervalId] = useState(null);
+    const {socket, isConnected} = useSocket();
+
+    useEffect(() => {
+        if(!socket)
+            return
+        
+        socket.on("pingAll", (data) => {
+            console.log(data);
+        })
+
+        socket.on("newMessage", (data) => {
+            console.log(data);
+        })
+    },[socket,isConnected])
 
     useEffect(() => {
         const fetchPalabras = async () => {
@@ -118,6 +134,7 @@ export default function Home() {
 
     return (
         <main className={styles.container}>
+            <button onClick={() => socket.emit('sendMessage', { message: "hola"})}>socket</button>
             <div className={styles.wordSection}>
                 {palabraActual ? (
                     <>

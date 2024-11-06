@@ -1,10 +1,10 @@
-"use client"; 
+'use client';
 import React, { useState, useEffect } from 'react';
-import styles from './page.module.css'; 
+import styles from './page.module.css';
 
 const GameRoom = () => {
   const [gameCode, setGameCode] = useState('');
-  const [userName, setUserName] = useState(''); // Estado para el nombre
+  const [userName, setUserName] = useState('');
   const [error, setError] = useState('');
   const [validCodes, setValidCodes] = useState([]);
   const [maxPlayers, setMaxPlayers] = useState('');
@@ -21,7 +21,7 @@ const GameRoom = () => {
       }
     };
     fetchRooms();
-  }, []); 
+  }, []);
 
   const handleJoinGame = async (event) => {
     event.preventDefault();
@@ -35,11 +35,8 @@ const GameRoom = () => {
           body: JSON.stringify({ nombre: userName }),
         });
 
-        // Guardar el nombre en localStorage
-        localStorage.setItem("username", userName);
-
         // Redirigir al usuario
-        window.location.href = "http://localhost:3000/page"; 
+        window.location.href = `http://localhost:3000/page?room=${gameCode}`; 
         setError('');
       } catch (err) {
         console.error('Error guardando nombre:', err);
@@ -73,10 +70,7 @@ const GameRoom = () => {
           body: JSON.stringify({ codigo: gameCode, cantidad_personas: parseInt(maxPlayers) }),
         });
 
-        if (!response.ok) {
-          throw new Error('Error al crear la sala');
-        }
-
+        // Guardar el nombre del jugador
         await fetch('http://localhost:4000/guardarNombre', {
           method: 'POST',
           headers: {
@@ -87,10 +81,10 @@ const GameRoom = () => {
 
         setGameCode('');
         setMaxPlayers('');
-        setUserName(''); 
+        setUserName('');
         document.getElementById('createGameModal').close(); 
         setError('');
-        window.location.href = "/page"; 
+        window.location.href = `/page?room=${gameCode}`; 
       } catch (err) {
         setError('Error al crear la sala.');
         console.error('Error:', err);
@@ -134,9 +128,11 @@ const GameRoom = () => {
         </form>
         <button className={styles.button} onClick={() => document.getElementById('createGameModal').showModal()}>Crear Juego</button>
       </div>
-      <dialog id="createGameModal" className={styles.modal}>
+
+      <dialog id="createGameModal">
+        <h2>Crear un Nuevo Juego</h2>
         <form onSubmit={handleCreateGame}>
-          <label htmlFor="newGameCode" className={styles.label}>Código del Juego</label>
+          <label htmlFor="newGameCode">Código del Juego</label>
           <input
             type="text"
             id="newGameCode"
@@ -146,37 +142,18 @@ const GameRoom = () => {
               setError('');
             }}
             required
-            className={styles.input}
           />
-          <label htmlFor="maxPlayers" className={styles.label}>Máx. Jugadores</label>
+          <label htmlFor="maxPlayers">Número Máximo de Jugadores</label>
           <input
             type="number"
             id="maxPlayers"
             value={maxPlayers}
-            onChange={(e) => {
-              setMaxPlayers(e.target.value);
-              setError('');
-            }}
+            onChange={(e) => setMaxPlayers(e.target.value)}
             required
-            className={styles.input}
           />
-          <label htmlFor="newUserName" className={styles.label}>Tu Nombre</label>
-          <input
-            type="text"
-            id="newUserName"
-            value={userName}
-            onChange={(e) => {
-              setUserName(e.target.value);
-              setError('');
-            }}
-            required
-            className={styles.input}
-          />
-          <div className={styles.dialogButtonsContainer}>
-            <button type="submit" className={styles.dialogButton}>Crear Juego</button>
-            <button type="button" className={styles.dialogButton} onClick={() => document.getElementById('createGameModal').close()}>Cancelar</button>
-          </div>
+          <button type="submit">Crear Sala</button>
         </form>
+        <button onClick={() => document.getElementById('createGameModal').close()}>Cerrar</button>
         {error && <p className={styles.error}>{error}</p>}
       </dialog>
     </div>
