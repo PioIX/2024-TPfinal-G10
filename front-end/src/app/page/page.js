@@ -5,7 +5,6 @@ import Chat from "../Components/Chat";
 import styles from "./page.module.css";
 import { useSocket } from "../hooks/useSocket";
 
-
 export default function Home() {
     const [palabras, setPalabras] = useState([]);
     const [palabrasSeleccionadas, setPalabrasSeleccionadas] = useState([]);
@@ -17,20 +16,41 @@ export default function Home() {
     const [usoPalabra, setUsoPalabra] = useState(0);
     const [canChangeBackground, setCanChangeBackground] = useState(false); 
     const [intervalId, setIntervalId] = useState(null);
-    const {socket, isConnected} = useSocket();
+    const { socket, isConnected } = useSocket();
+    const [room, setRoom] = useState("");
+    const [username, setUsername] = useState(""); // Agregado para guardar el nombre del usuario
 
     useEffect(() => {
-        if(!socket)
-            return
-        
+        // Obtener el nombre del último jugador cuando el componente se monta
+        const fetchLastUserName = async () => {
+            try {
+                const response = await fetch('http://localhost:4000/ultimoNombre');
+                const data = await response.json();
+                if (data && data.nombre) {
+                    setUsername(data.nombre);
+                    localStorage.setItem("username", data.nombre); // Guardar el nombre si existe
+                } else {
+                    console.warn('No se encontró un nombre en la respuesta');
+                }
+            } catch (err) {
+                console.error('Error fetching last user name:', err);
+            }
+        };
+
+        fetchLastUserName();
+    }, []); // Se ejecuta solo una vez al cargar el componente
+
+    useEffect(() => {
+        if (!socket) return;
+
         socket.on("pingAll", (data) => {
             console.log(data);
-        })
+        });
 
-        socket.on("newMessage", (data) => {
+        socket.on("sendMessage", (data) => {
             console.log(data);
-        })
-    },[socket,isConnected])
+        });
+    }, [socket, isConnected]);
 
     useEffect(() => {
         const fetchPalabras = async () => {
@@ -46,6 +66,18 @@ export default function Home() {
 
         fetchPalabras();
     }, []);
+
+    useEffect(() => {
+        if (!socket || !username) return;  // Verifica si socket y username están disponibles
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCode = urlParams.get('room');
+        setRoom(roomCode);
+
+        if (roomCode && username) {
+            socket.emit("unirseSala", { codigoSala: roomCode, nombreJugador: username });
+        }
+    }, [socket, username]);  // Dependencia en socket y username para asegurarse de que ambos estén listos
 
     const seleccionarTresPalabras = (data) => {
         const seleccionadas = [];
@@ -134,7 +166,6 @@ export default function Home() {
 
     return (
         <main className={styles.container}>
-            <button onClick={() => socket.emit('sendMessage', { message: "hola"})}>socket</button>
             <div className={styles.wordSection}>
                 {palabraActual ? (
                     <>
