@@ -3,20 +3,20 @@
     flex-direction: column;
     align-items: center;
     margin: 10px;
-    font-family: 'Poppins', sans-serif; /* Fuente moderna y agradable */
+    font-family: 'Poppins', sans-serif; 
 }
 
 .canvas {
-    border: 2px solid #000000; /* Borde negro */
-    border-radius: 12px; /* Bordes redondeados */
-    background-color: #ffffff; /* Fondo blanco */
-    cursor: crosshair; /* Cursor para dibujar */
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); /* Sombra suave */
-    transition: box-shadow 0.3s ease-in-out; /* Transición suave para la sombra */
+    border: 2px solid #000000; 
+    border-radius: 12px; 
+    background-color: #ffffff; 
+    cursor: crosshair; 
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); 
+    transition: box-shadow 0.3s ease-in-out; 
 }
 
 .canvas:hover {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Aumentar sombra al pasar el mouse */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); 
 }
 
 .controls {
@@ -29,41 +29,42 @@
     width: 45px;
     height: 45px;
     margin-right: 10px;
-    border: 2px solid #333; /* Borde oscuro por defecto */
+    border: 2px solid #000000; 
     cursor: pointer;
-    border-radius: 12px; /* Bordes más redondeados para botones */
+    border-radius: 12px; 
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s ease;
 }
 
 .colorButton:hover {
-    transform: scale(1.1); /* Aumentar el tamaño de los botones al pasar el mouse */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Sombra al pasar el mouse */
-    border-color: #000; /* Borde más oscuro al pasar el mouse */
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: #000; 
 }
 
 .colorButton:active {
-    transform: scale(0.95); /* Efecto de 'presionar' el botón */
+    transform: scale(0.95);
 }
 
 .backgroundColorSelector button {
-    margin: 5px;
-    border-radius: 50%; /* Redondea los botones para darles forma circular */
-    width: 40px;
-    height: 40px;
-    border: 1px solid #000000; /* Borde oscuro por defecto */
+    width: 45px;
+    height: 45px;
+    margin-right: 10px;
+    border: 10px solid #000000; 
     cursor: pointer;
+    border-radius: 12px;
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s ease;
 }
 
+
 .backgroundColorSelector button:hover {
-    transform: scale(1.1); /* Aumenta el tamaño al pasar el mouse */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Sombra suave */
-    border-color: #000; /* Borde más oscuro al pasar el mouse */
+    transform: scale(1.1); 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+    border-color: #000; 
 }
 
 .colorPicker {
-    border: 2px solid #ddd;
-    border-radius: 8px;
+        border: 2px solid #000000;
+        border-radius: 8px;
     padding: 5px;
     margin-left: 15px;
     cursor: pointer;
@@ -91,12 +92,12 @@
 }
 
 .eraserButton:hover {
-    background-color: #e1e1e6; /* Color más oscuro para hover */
-    transform: scale(1.05); /* Leve aumento al pasar el mouse */
+    background-color: #e1e1e6; 
+    transform: scale(1.05);
 }
 
 .eraserButton:active {
-    transform: scale(0.98); /* Efecto de 'presionar' */
+    transform: scale(0.98); 
 }
 
 .actionButtons {
@@ -121,8 +122,8 @@
 .undoButton:hover,
 .clearButton:hover,
 .saveButton:hover {
-    transform: scale(1.05); /* Efecto de aumentar tamaño al pasar el mouse */
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); /* Sombra al pasar el mouse */
+    transform: scale(1.05);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); 
 }
 
 .undoButton:active,
@@ -171,30 +172,29 @@
 }
 
 .backgroundColorSelector {
-    display: flex; /* Esto hace que los botones se alineen horizontalmente */
-    flex-wrap: wrap; /* Si hay muchos botones, se envuelven a la siguiente línea */
-    justify-content: center; /* Centra los botones horizontalmente */
+    display: flex;
+    flex-wrap: wrap; 
     margin: 20px 0;
 }
 
 .backgroundColorSelector h4 {
     font-size: 18px;
     color: #333;
-    margin-bottom: 10px;
+    margin-top: 5px;
 }
 
 .backgroundColorSelector button {
-    margin: 5px;
-    border-radius: 50%; /* Redondea los botones para darles forma circular */
+    margin: 0 5px;
+    border: 2px solid #000000;
+    border-radius: 8px;
     width: 40px;
     height: 40px;
-    border: none;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s ease;
 }
 
 .backgroundColorSelector button:hover {
-    transform: scale(1.1); /* Aumenta el tamaño al pasar el mouse */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra suave */
-    border-color: #000; /* Borde más oscuro al pasar el mouse */
+    transform: scale(1.1); 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+    border-color: #000; 
 }
