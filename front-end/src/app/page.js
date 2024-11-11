@@ -84,7 +84,7 @@ const GameRoom = () => {
         setUserName('');
         document.getElementById('createGameModal').close(); 
         setError('');
-        window.location.href = `/page?room=${gameCode}`; 
+        window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}`; 
       } catch (err) {
         setError('Error al crear la sala.');
         console.error('Error:', err);
@@ -129,10 +129,9 @@ const GameRoom = () => {
         <button className={styles.button} onClick={() => document.getElementById('createGameModal').showModal()}>Crear Juego</button>
       </div>
 
-      <dialog id="createGameModal">
-        <h2>Crear un Nuevo Juego</h2>
+      <dialog id="createGameModal" className={styles.modal}>
         <form onSubmit={handleCreateGame}>
-          <label htmlFor="newGameCode">Código del Juego</label>
+          <label htmlFor="newGameCode" className={styles.label}>Código del Juego</label>
           <input
             type="text"
             id="newGameCode"
@@ -142,21 +141,40 @@ const GameRoom = () => {
               setError('');
             }}
             required
+            className={styles.input}
           />
-          <label htmlFor="maxPlayers">Número Máximo de Jugadores</label>
+          <label htmlFor="maxPlayers" className={styles.label}>Máx. Jugadores</label>
           <input
             type="number"
             id="maxPlayers"
             value={maxPlayers}
-            onChange={(e) => setMaxPlayers(e.target.value)}
+            onChange={(e) => {
+              setMaxPlayers(e.target.value);
+              setError('');
+            }}
             required
+            className={styles.input}
           />
-          <button type="submit">Crear Sala</button>
+          <label htmlFor="newUserName" className={styles.label}>Tu Nombre</label>
+          <input
+            type="text"
+            id="newUserName"
+            value={userName}
+            onChange={(e) => {
+              setUserName(e.target.value);
+              setError('');
+            }}
+            required
+            className={styles.input}
+          />
+          <div className={styles.dialogButtonsContainer}>
+            <button type="submit" className={styles.dialogButton}>Crear Juego</button>
+            <button type="button" className={styles.dialogButton} onClick={() => document.getElementById('createGameModal').close()}>Cancelar</button>
+          </div>
         </form>
-        <button onClick={() => document.getElementById('createGameModal').close()}>Cerrar</button>
         {error && <p className={styles.error}>{error}</p>}
       </dialog>
-    </div>
+      </div>
   );
 };
 
