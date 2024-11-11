@@ -36,7 +36,7 @@ const GameRoom = () => {
         });
 
         // Redirigir al usuario
-        window.location.href = `http://localhost:3000/page?room=${gameCode}`; 
+        window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}`; 
         setError('');
       } catch (err) {
         console.error('Error guardando nombre:', err);
