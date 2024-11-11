@@ -41,33 +41,6 @@ export default function Home() {
     }, []); // Se ejecuta solo una vez al cargar el componente
 
     useEffect(() => {
-        if (!socket) return;
-
-        socket.on("pingAll", (data) => {
-            console.log(data);
-        });
-
-        socket.on("sendMessage", (data) => {
-            console.log(data);
-        });
-    }, [socket, isConnected]);
-
-    useEffect(() => {
-        const fetchPalabras = async () => {
-            try {
-                const response = await fetch('http://localhost:4000/palabrasObtener');
-                const data = await response.json();
-                setPalabras(data);
-                seleccionarTresPalabras(data);
-            } catch (error) {
-                console.error("Error al obtener palabras:", error);
-            }
-        };
-
-        fetchPalabras();
-    }, []);
-
-    useEffect(() => {
         if (!socket || !username) return;  // Verifica si socket y username están disponibles
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -198,7 +171,7 @@ export default function Home() {
                     />
                 </div>
                 <div className="chatContainer">
-                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} />
+                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket} />
                 </div>
             </div>
         </main>

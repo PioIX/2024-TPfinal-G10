@@ -1,29 +1,26 @@
-"use client"; 
+"use client";
 import React, { useEffect, useRef, useState } from "react";
 import styles from './Chat.module.css';
 
-export default function Chat({ palabraActual, onCorrectGuess }) {
+export default function Chat({ palabraActual, onCorrectGuess, socket }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const messageEndRef = useRef(null);
 
     useEffect(() => {
-        const fetchLastUserName = async () => {
-            try {
-                const response = await fetch('http://localhost:4000/ultimoNombre');
-                const data = await response.json();
-                if (data && data.nombre) {
-                    localStorage.setItem("username", data.nombre); // Guardar el nombre si existe
-                } else {
-                    console.warn('No se encontró un nombre en la respuesta');
-                }
-            } catch (err) {
-                console.error('Error fetching last user name:', err);
-            }
-        };
+        if (!socket) return;
 
-        fetchLastUserName();
-    }, []);
+        socket.on('receiveMessage', (message) => {
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                message
+            ]);
+        });
+
+        return () => {
+            socket.off('receiveMessage');
+        };
+    }, [socket]);
 
     const normalizeString = (str) => {
         return str
@@ -66,13 +63,15 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
                 responseMessage = { text: "casi", sender: 'bot', className: styles.casiMessage };
             }
 
-            // Recuperar el nombre de usuario de localStorage
             const userName = localStorage.getItem("username") || "Usuario desconocido";
-            const newMessage = `${userName}: ${input}`;
+            const newMessage = { text: `${userName}: ${input}`, sender: 'user' };
+
+            // Emitir mensaje al servidor
+            socket.emit('sendMessage', newMessage);
 
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: newMessage, sender: 'user' },
+                newMessage,
                 responseMessage && responseMessage
             ].filter(Boolean));
 

@@ -1,25 +1,25 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const db = require('./modulos/mysql');  // Asegúrate de que este archivo esté configurado correctamente
+const db = require('./modulos/mysql');
 const session = require('express-session');
 var cors = require('cors');
 const app = express();
 
-// Middleware para analizar las solicitudes HTTP
+// Middleware para manejar las solicitudes JSON
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
 
-// Configurar el puerto en el que se ejecutará el servidor
+// Configuración del servidor
 const LISTEN_PORT = 4000;
 const server = app.listen(LISTEN_PORT, () => {
     console.log(`Servidor NodeJS corriendo en http://localhost:${LISTEN_PORT}/`);
 });
 
-// Configuración de Socket.IO con CORS
+// Configuración de Socket.IO
 const io = require('socket.io')(server, {
     cors: {
-        origin: ["http://localhost:3000", "http://localhost:3001"],  // Permitir CORS desde el cliente React
+        origin: ["http://localhost:3000", "http://localhost:3001"], // Asegúrate de que tus dominios estén bien configurados
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true
     }
@@ -27,7 +27,7 @@ const io = require('socket.io')(server, {
 
 // Middleware de sesión
 const sessionMiddleware = session({
-    secret: "ositos",  // Cambia esto por una clave más segura
+    secret: "ositos",  // Cambia por una clave más segura en producción
     resave: false,
     saveUninitialized: false
 });
@@ -39,111 +39,161 @@ io.use((socket, next) => {
     sessionMiddleware(socket.request, socket.request.res || {}, next);
 });
 
-// Rutas para obtener información desde la base de datos
 app.get('/entrarSala', async (req, res) => {
-    try {
-        const results = await db.query('SELECT * FROM salas');
-        res.json(results);
-    } catch (err) {
-        res.status(500).send(err);
-    }
+	try {
+		const results = await db.query('SELECT * FROM salas');
+		res.json(results);
+	} catch (err) {
+		res.status(500).send(err);
+	}
 });
 
-// Obtener el último nombre registrado en la base de datos
+io.on('connection', (socket) => {
+    socket.on('unirseSala', (codigoSala) => {
+        socket.join(codigoSala);
+        socket.to(codigoSala).emit('nuevoUsuario', 'Un nuevo usuario se ha unido a la sala: ' + codigoSala);
+    });
+});
+
+
+app.post('/crearSala', async (req, res) => { 
+	const { codigo, cantidad_personas } = req.body;
+	try {
+		const results = await db.query(
+			`INSERT INTO salas (codigo, cantidad_personas) VALUES ('${codigo}', ${cantidad_personas})`
+		);
+		res.json(results);
+	} catch (err) {
+		res.status(500).send(err);
+	}
+});
+
+
+
+
+app.post('/sendMessage', async (req, res) => {
+	const { chatId, message, sender } = req.body;
+  
+	try {
+	  await pool.query(
+		`INSERT INTO messages (chat_id, message_text, sender, timestamp) 
+		 VALUES ($1, $2, $3, NOW())`,
+		[chatId, message, sender]
+	  );
+	  await pool.query(
+		`UPDATE chats SET message_text = $1 WHERE id = $2`,
+		[message, chatId]
+	  );
+	  res.status(201).send('Mensaje enviado');
+	} catch (error) {
+	  res.status(500).send(error);
+	}
+  });
+
+  
+// Obtener mensajes
+app.get('/chats', (req, res) => {
+	const { chatId } = req.params;
+	db.query('SELECT * FROM messages WHERE chat_id = ?', [chatId], (err, results) => {
+		if (err) return res.status(500).send(err);
+		res.json(results);
+	});
+});
+// Rutas del servidor
 app.get('/ultimoNombre', async (req, res) => {
     try {
         const results = await db.query('SELECT nombre FROM nombres ORDER BY id DESC LIMIT 1');
         res.json(results[0]);
     } catch (err) {
-        res.status(500).send(err);
+        res.status(500).send({ error: 'Error al obtener el último nombre', details: err });
     }
 });
 
-// Crear una nueva sala
-app.post('/crearSala', async (req, res) => {
-    const { codigo, cantidad_personas } = req.body;
-    try {
-        const results = await db.query(
-            `INSERT INTO salas (codigo, cantidad_personas) VALUES ('${codigo}', ${cantidad_personas})`
-        );
-        res.json(results);
-    } catch (err) {
-        res.status(500).send(err);
-    }
-});
-
-// Guardar el nombre de un jugador en la base de datos
-app.post('/guardarNombre', async (req, res) => {
-    const { nombre } = req.body;
-    try {
-        const results = await db.query(
-            `INSERT INTO nombres (nombre) VALUES ('${nombre}')`
-        );
-        res.status(201).json(results);
-    } catch (err) {
-        res.status(500).send(err);
-    }
-});
-
-// Obtener una lista de palabras desde la base de datos
 app.get('/palabrasObtener', async (req, res) => {
     try {
         const results = await db.query('SELECT * FROM palabras2');
         res.json(results);
     } catch (err) {
-        res.status(500).send(err);
+        res.status(500).send({ error: 'Error al obtener las palabras', details: err });
     }
 });
 
-// Configuración de las conexiones de WebSocket
+app.get('/chats/:chatId', (req, res) => {
+	const { chatId } = req.params;
+	db.query('SELECT * FROM messages WHERE chat_id = ?', [chatId], (err, results) => {
+	  if (err) return res.status(500).send(err);
+	  res.json(results);  
+	});
+  });
+
+// Enviar un nuevo mensaje
+app.post('/chats', (req, res) => {
+	const { chatId, sender, text } = req.body;
+	db.query(
+	  'INSERT INTO messages (chat_id, sender, text) VALUES (?, ?, ?)',
+	  [chatId, sender, text],
+	  (err, results) => {
+		if (err) {
+		  return res.status(500).send(err);
+		}
+		res.status(201).json({ id: results.insertId, chatId, sender, text });
+	  }
+	);
+  });
+
+app.post('/cualquierCosa', async (req, res) => {
+    const phoneNumber = req.body.number;
+
+    try {
+        const results = await db.query(`SELECT phone_number FROM users WHERE phone_number = ${phoneNumber}`);
+        const exists = results.length > 0; 
+        res.send(results);
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
+// Función para obtener los jugadores en una sala
+function getPlayersInRoom(roomCode) {
+    const clients = io.sockets.adapter.rooms.get(roomCode);
+    return Array.from(clients || []).map(socketId => io.sockets.sockets.get(socketId).request.session.username);
+}
+
+// Lógica de Socket.IO
 io.on('connection', (socket) => {
-    socket.on('unirseSala', (data) => {
-        // Asegúrate de que 'data' no sea nulo
-        if (!data || !data.codigoSala || !data.nombreJugador) {
-            console.error('Datos inválidos al intentar unirse a la sala', data);
-            return;  // No procesar si los datos no son válidos
+    console.log('Nuevo cliente conectado');
+
+    // Cuando un cliente envía un mensaje
+    socket.on('sendMessage', (message) => {
+        if (!message || !message.text || !socket.request.session.room) {
+            console.error('Mensaje o sala inválidos', message);
+            return;
         }
 
+        // Emitir el mensaje a todos los demás en la misma sala
+        socket.to(socket.request.session.room).emit('receiveMessage', message);
+    });
+
+    // Evento cuando un cliente se une a una sala
+    socket.on('unirseSala', (data) => {
         const { codigoSala, nombreJugador } = data;
         socket.request.session.room = codigoSala;
         socket.request.session.username = nombreJugador;
         socket.join(codigoSala);
+        
         console.log(`${nombreJugador} se unió a la sala ${codigoSala}`);
-
-        io.to(codigoSala).emit('nuevoUsuario', `${nombreJugador} se ha unido a la sala ${codigoSala}`);
-        socket.to(codigoSala).emit('actualizarJugadores', { room: codigoSala, players: getPlayersInRoom(codigoSala) });
+        
+        // Emitir que un nuevo jugador se ha unido a la sala
+        io.to(codigoSala).emit('nuevoUsuario', `${nombreJugador} se ha unido a la sala.`);
     });
 
-    // Función para obtener la lista de jugadores en la sala
-    function getPlayersInRoom(roomCode) {
-        const clients = io.sockets.adapter.rooms.get(roomCode);
-        return Array.from(clients || []).map(socketId => io.sockets.sockets.get(socketId).request.session.username);
-    }
-
-    // Iniciar el juego y emitir la palabra y el tiempo
-    socket.on('iniciarJuego', (codigoSala, palabra, tiempo) => {
-        io.to(codigoSala).emit('iniciarJuego', { palabra, tiempo });
-    });
-
-    // Enviar datos de dibujo al resto de los jugadores
-    socket.on('draw', (data) => {
-        io.to(data.roomCode).emit('draw', data.drawingData);
-    });
-
-    // Enviar mensajes a los jugadores
-    socket.on('sendMessage', (data) => {
-        console.log(data);
-        io.to(data.roomCode).emit('newMessage', { message: data.message, sender: data.sender });
-    });
-
-    // Cuando un jugador se desconecta
+    // Evento de desconexión
     socket.on('disconnect', () => {
         const roomCode = socket.request.session.room;
         const playerName = socket.request.session.username;
 
         if (roomCode && playerName) {
-            io.to(roomCode).emit('nuevoUsuario', `${playerName} se ha desconectado`);
-            io.to(roomCode).emit('actualizarJugadores', { room: roomCode, players: getPlayersInRoom(roomCode) });
+            console.log(`${playerName} se ha desconectado de la sala ${roomCode}`);
+            io.to(roomCode).emit('nuevoUsuario', `${playerName} se ha desconectado.`);
         }
     });
 });
