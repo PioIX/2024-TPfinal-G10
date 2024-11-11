@@ -5,36 +5,36 @@ const session = require('express-session');
 var cors = require('cors');
 const app = express();
 
-// Middleware para manejar las solicitudes JSON
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
 
-// Configuración del servidor
+
 const LISTEN_PORT = 4000;
 const server = app.listen(LISTEN_PORT, () => {
     console.log(`Servidor NodeJS corriendo en http://localhost:${LISTEN_PORT}/`);
 });
 
-// Configuración de Socket.IO
+
 const io = require('socket.io')(server, {
     cors: {
-        origin: ["http://localhost:3000", "http://localhost:3001"], // Asegúrate de que tus dominios estén bien configurados
+        origin: ["http://localhost:3000", "http://localhost:3001"], 
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true
     }
 });
 
-// Middleware de sesión
+
 const sessionMiddleware = session({
-    secret: "ositos",  // Cambia por una clave más segura en producción
+    secret: "ositos",  
     resave: false,
     saveUninitialized: false
 });
 
 app.use(sessionMiddleware);
 
-// Usamos el middleware de sesión para las conexiones de socket
+
 io.use((socket, next) => {
     sessionMiddleware(socket.request, socket.request.res || {}, next);
 });
@@ -90,8 +90,6 @@ app.post('/sendMessage', async (req, res) => {
 	}
   });
 
-  
-// Obtener mensajes
 app.get('/chats', (req, res) => {
 	const { chatId } = req.params;
 	db.query('SELECT * FROM messages WHERE chat_id = ?', [chatId], (err, results) => {
@@ -99,7 +97,7 @@ app.get('/chats', (req, res) => {
 		res.json(results);
 	});
 });
-// Rutas del servidor
+
 app.get('/ultimoNombre', async (req, res) => {
     try {
         const results = await db.query('SELECT nombre FROM nombres ORDER BY id DESC LIMIT 1');
@@ -126,7 +124,6 @@ app.get('/chats/:chatId', (req, res) => {
 	});
   });
 
-// Enviar un nuevo mensaje
 app.post('/chats', (req, res) => {
 	const { chatId, sender, text } = req.body;
 	db.query(
@@ -152,28 +149,25 @@ app.post('/cualquierCosa', async (req, res) => {
         res.status(500).send(error);
     }
 });
-// Función para obtener los jugadores en una sala
+
 function getPlayersInRoom(roomCode) {
     const clients = io.sockets.adapter.rooms.get(roomCode);
     return Array.from(clients || []).map(socketId => io.sockets.sockets.get(socketId).request.session.username);
 }
 
-// Lógica de Socket.IO
+
 io.on('connection', (socket) => {
     console.log('Nuevo cliente conectado');
 
-    // Cuando un cliente envía un mensaje
     socket.on('sendMessage', (message) => {
         if (!message || !message.text || !socket.request.session.room) {
             console.error('Mensaje o sala inválidos', message);
             return;
         }
 
-        // Emitir el mensaje a todos los demás en la misma sala
         socket.to(socket.request.session.room).emit('receiveMessage', message);
     });
 
-    // Evento cuando un cliente se une a una sala
     socket.on('unirseSala', (data) => {
         const { codigoSala, nombreJugador } = data;
         socket.request.session.room = codigoSala;
@@ -182,11 +176,9 @@ io.on('connection', (socket) => {
         
         console.log(`${nombreJugador} se unió a la sala ${codigoSala}`);
         
-        // Emitir que un nuevo jugador se ha unido a la sala
         io.to(codigoSala).emit('nuevoUsuario', `${nombreJugador} se ha unido a la sala.`);
     });
 
-    // Evento de desconexión
     socket.on('disconnect', () => {
         const roomCode = socket.request.session.room;
         const playerName = socket.request.session.username;

@@ -6,19 +6,18 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const messageEndRef = useRef(null);
-    const [username, setUsername] = useState(""); // Agregado para obtener el nombre desde la URL
+    const [username, setUsername] = useState(""); 
 
     useEffect(() => {
-        // Extraer el username desde los parámetros de la URL
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
         
         if (playerName) {
-            setUsername(playerName); // Establecer el nombre del jugador desde el parámetro URL
+            setUsername(playerName); 
         } else {
-            setUsername("Usuario desconocido"); // Valor por defecto si no se encuentra el nombre
+            setUsername("Usuario desconocido"); 
         }
-    }, []); // Se ejecuta una sola vez cuando el componente se monta
+    }, []); 
 
     useEffect(() => {
         if (!socket) return;
@@ -78,7 +77,6 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
 
             const newMessage = { text: `${username}: ${input}`, sender: 'user' };
 
-            // Emitir mensaje al servidor
             socket.emit('sendMessage', newMessage);
 
             setMessages((prevMessages) => [

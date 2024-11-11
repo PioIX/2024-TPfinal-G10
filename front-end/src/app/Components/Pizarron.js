@@ -13,7 +13,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
     const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
     const [backgroundChanged, setBackgroundChanged] = useState(false);
     const [isBackgroundSet, setIsBackgroundSet] = useState(false);
-    const [timerStarted, setTimerStarted] = useState(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;

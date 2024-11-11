@@ -18,43 +18,41 @@ export default function Home() {
     const [intervalId, setIntervalId] = useState(null);
     const { socket, isConnected } = useSocket();
     const [room, setRoom] = useState("");
-    const [username, setUsername] = useState(""); // Se usa para guardar el nombre del usuario
+    const [username, setUsername] = useState("");
 
     useEffect(() => {
-        // Extraer el nombre del jugador desde la URL
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
         const roomCode = urlParams.get('room');
         
         if (playerName) {
-            setUsername(playerName); // Establecer el nombre del jugador desde el parámetro URL
+            setUsername(playerName); 
         }
         
         if (roomCode) {
-            setRoom(roomCode); // Establecer el código de la sala desde el parámetro URL
+            setRoom(roomCode); 
         }
-    }, []); // Se ejecuta una sola vez cuando el componente se monta
+    }, []); 
 
     useEffect(() => {
-        // Obtener las palabras del servidor cuando el componente se monta
         fetch("http://localhost:4000/palabrasObtener")
             .then((response) => response.json())
             .then((data) => {
-                setPalabras(data); // Guardar las palabras obtenidas
-                seleccionarTresPalabras(data); // Seleccionar tres palabras al obtener los datos
+                setPalabras(data); 
+                seleccionarTresPalabras(data); 
             })
             .catch((error) => {
                 console.error("Error al obtener las palabras:", error);
             });
-    }, []); // Solo se ejecuta una vez cuando el componente se monta
+    }, []); 
 
     useEffect(() => {
-        if (!socket || !username) return;  // Verifica si socket y username están disponibles
+        if (!socket || !username) return;  
 
         if (room && username) {
             socket.emit("unirseSala", { codigoSala: room, nombreJugador: username });
         }
-    }, [socket, username, room]);  // Dependencias en socket, username y room para asegurarse de que ambos estén listos
+    }, [socket, username, room]);  
 
     const seleccionarTresPalabras = (data) => {
         const seleccionadas = [];
@@ -71,7 +69,7 @@ export default function Home() {
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
         setCanvasEnabled(true);
-        setCanChangeBackground(true); // Permitir cambiar el fondo
+        setCanChangeBackground(true); 
         setUsoPalabra((prev) => prev + 1);
         iniciarTemporizador();
     };
@@ -106,7 +104,7 @@ export default function Home() {
         seleccionarTresPalabras(palabras);
         setPalabraActual("");
         setCanvasEnabled(false);
-        setCanChangeBackground(false); // Desactivar cambio de fondo
+        setCanChangeBackground(false); 
         setUsoPalabra(0);
 
         if (intervalId) {

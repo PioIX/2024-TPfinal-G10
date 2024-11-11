@@ -35,7 +35,6 @@ const GameRoom = () => {
           body: JSON.stringify({ nombre: userName }),
         });
 
-        // Redirigir al usuario
         window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}`; 
         setError('');
       } catch (err) {
@@ -70,7 +69,6 @@ const GameRoom = () => {
           body: JSON.stringify({ codigo: gameCode, cantidad_personas: parseInt(maxPlayers) }),
         });
 
-        // Guardar el nombre del jugador
         await fetch('http://localhost:4000/guardarNombre', {
           method: 'POST',
           headers: {
