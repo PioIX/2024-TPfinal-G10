@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import PizarronCanvas from "../Components/Pizarron";
 import Chat from "../Components/Chat";
 import styles from "./page.module.css";
@@ -14,45 +14,60 @@ export default function Home() {
     const [message, setMessage] = useState("");
     const [canvasEnabled, setCanvasEnabled] = useState(false);
     const [usoPalabra, setUsoPalabra] = useState(0);
-    const [canChangeBackground, setCanChangeBackground] = useState(false); 
-    const [intervalId, setIntervalId] = useState(null);
+    const [canChangeBackground, setCanChangeBackground] = useState(false);
+    const [numJugadores, setNumJugadores] = useState(0);
     const { socket, isConnected } = useSocket();
     const [room, setRoom] = useState("");
     const [username, setUsername] = useState("");
+    const intervalRef = useRef(null);
+    const [usuariosNombre, setUsuariosNombre] = useState("");
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const room = urlParams.get('room');
+        if (socket && room) {
+            socket.emit('getPlayersInRoom', room, (playersCount) => {
+                setNumJugadores(playersCount.length + 1);
+                setUsuariosNombre(playersCount)
+            });
+        }
+    }, [socket]);
+    
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
         const roomCode = urlParams.get('room');
-        
+
         if (playerName) {
-            setUsername(playerName); 
+            setUsername(playerName);
         }
-        
+
         if (roomCode) {
-            setRoom(roomCode); 
+            setRoom(roomCode);
         }
-    }, []); 
+    }, []);
 
     useEffect(() => {
-        fetch("http://localhost:4000/palabrasObtener")
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+        fetch(`${apiUrl}/palabrasObtener`)
             .then((response) => response.json())
             .then((data) => {
-                setPalabras(data); 
-                seleccionarTresPalabras(data); 
+                setPalabras(data);
+                seleccionarTresPalabras(data);
             })
             .catch((error) => {
                 console.error("Error al obtener las palabras:", error);
             });
-    }, []); 
+    }, []);
 
     useEffect(() => {
-        if (!socket || !username) return;  
+        if (!socket || !username) return;
 
         if (room && username) {
             socket.emit("unirseSala", { codigoSala: room, nombreJugador: username });
         }
-    }, [socket, username, room]);  
+    }, [socket, username, room]);
 
     const seleccionarTresPalabras = (data) => {
         const seleccionadas = [];
@@ -69,21 +84,21 @@ export default function Home() {
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
         setCanvasEnabled(true);
-        setCanChangeBackground(true); 
+        setCanChangeBackground(true);
         setUsoPalabra((prev) => prev + 1);
         iniciarTemporizador();
     };
 
     const iniciarTemporizador = () => {
-        if (intervalId) {
-            clearInterval(intervalId);
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
         }
 
         setSegundos(60);
-        const newIntervalId = setInterval(() => {
+        intervalRef.current = setInterval(() => {
             setSegundos((prev) => {
                 if (prev === 1) {
-                    clearInterval(newIntervalId);
+                    clearInterval(intervalRef.current);
                     resetGame();
                     setMessage("Se terminó el tiempo!");
                     return 0;
@@ -91,8 +106,6 @@ export default function Home() {
                 return prev - 1;
             });
         }, 1000);
-
-        setIntervalId(newIntervalId);
     };
 
     const resetGame = () => {
@@ -104,12 +117,12 @@ export default function Home() {
         seleccionarTresPalabras(palabras);
         setPalabraActual("");
         setCanvasEnabled(false);
-        setCanChangeBackground(false); 
+        setCanChangeBackground(false);
         setUsoPalabra(0);
 
-        if (intervalId) {
-            clearInterval(intervalId);
-            setIntervalId(null);
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
         }
     };
 
@@ -131,17 +144,10 @@ export default function Home() {
         }
     }, [usoPalabra]);
 
-    useEffect(() => {
-        return () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-        };
-    }, [intervalId]);
-
     return (
         <main className={styles.container}>
             <div className={styles.wordSection}>
+                <p className={styles.hola}>Jugadores en la sala: {numJugadores}</p>
                 {palabraActual ? (
                     <>
                         <p className={styles.word}>{palabraActual}</p>
@@ -152,7 +158,11 @@ export default function Home() {
                         <h3>Selecciona una palabra:</h3>
                         {palabrasSeleccionadas.length > 0 ? (
                             palabrasSeleccionadas.map((palabra, index) => (
-                                <button key={index} onClick={() => manejarSeleccionPalabra(palabra)}>
+                                <button
+                                    key={index}
+                                    onClick={() => manejarSeleccionPalabra(palabra)}
+                                    aria-label={`Seleccionar palabra: ${palabra}`}
+                                >
                                     {palabra}
                                 </button>
                             ))
@@ -170,10 +180,10 @@ export default function Home() {
 
             <div className={styles.flexContainer}>
                 <div className="pizarronContainer">
-                    <PizarronCanvas 
-                        clearCanvas={clearCanvas} 
-                        disabled={!canvasEnabled} 
-                        canChangeBackground={canChangeBackground} 
+                    <PizarronCanvas
+                        clearCanvas={clearCanvas}
+                        disabled={!canvasEnabled}
+                        canChangeBackground={canChangeBackground}
                     />
                 </div>
                 <div className="chatContainer">

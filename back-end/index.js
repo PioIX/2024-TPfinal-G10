@@ -152,19 +152,19 @@ app.post('/cualquierCosa', async (req, res) => {
 
 function getPlayersInRoom(roomCode) {
     const clients = io.sockets.adapter.rooms.get(roomCode);
-    return Array.from(clients || []).map(socketId => io.sockets.sockets.get(socketId).request.session.username);
+    return (Array.from(clients || []).map(socketId => io.sockets.sockets.get(socketId).request.session.username).length);
 }
 
 
 io.on('connection', (socket) => {
     console.log('Nuevo cliente conectado');
-
     socket.on('sendMessage', (message) => {
         if (!message || !message.text || !socket.request.session.room) {
             console.error('Mensaje o sala inválidos', message);
+
             return;
         }
-
+       
         socket.to(socket.request.session.room).emit('receiveMessage', message);
     });
 
@@ -175,9 +175,14 @@ io.on('connection', (socket) => {
         socket.join(codigoSala);
         
         console.log(`${nombreJugador} se unió a la sala ${codigoSala}`);
-        
+        console.log(getPlayersInRoom(codigoSala))
         io.to(codigoSala).emit('nuevoUsuario', `${nombreJugador} se ha unido a la sala.`);
     });
+    socket.on('getPlayersInRoom', (roomCode, callback) => {
+        const playersCount = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
+        callback(playersCount); 
+    });
+    
 
     socket.on('disconnect', () => {
         const roomCode = socket.request.session.room;
@@ -185,6 +190,7 @@ io.on('connection', (socket) => {
 
         if (roomCode && playerName) {
             console.log(`${playerName} se ha desconectado de la sala ${roomCode}`);
+            console.log(getPlayersInRoom(roomCode))
             io.to(roomCode).emit('nuevoUsuario', `${playerName} se ha desconectado.`);
         }
     });

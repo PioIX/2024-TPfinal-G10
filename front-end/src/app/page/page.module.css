@@ -11,6 +11,14 @@
     position: relative; 
 }
 
+.hola {
+    color: black;
+    margin-top: 10px;
+    gap: 10px; 
+    font-size: 20px;
+}
+
+
 .seleccionPalabra {
     color: black;
     display: flex;
