@@ -25,6 +25,9 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         // Establecer fondo blanco
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Cargar el lienzo al inicio si hay algo guardado en localStorage
+        loadCanvas();
     }, []);
 
     useEffect(() => {
@@ -125,29 +128,20 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     };
 
     const saveCanvas = () => {
-        const canvas = canvasRef.current;
-        const imageData = canvas.toDataURL("image/png");
-        const link = document.createElement("a");
-        link.href = imageData;
-        link.download = "pizarron.png";
-        link.click();
+        // GUARDAR EN LOCAL STORAGE
+        localStorage.setItem("latestCanvas", JSON.stringify(actions));
+        alert("Lienzo guardado!");
     };
 
     const loadCanvas = () => {
-        const canvas = canvasRef.current;
-        const context = canvas.getContext("2d");
+        const savedActions = localStorage.getItem("latestCanvas");
 
-        const savedImageData = localStorage.getItem("latestCanvas");
-
-        if (savedImageData) {
-            const img = new Image();
-            img.onload = () => {
-                context.clearRect(0, 0, canvas.width, canvas.height);
-                context.drawImage(img, 0, 0);
-            };
-            img.src = savedImageData;
+        if (savedActions) {
+            const parsedActions = JSON.parse(savedActions);
+            setActions(parsedActions);
+            redrawCanvas(parsedActions);
         } else {
-            console.log("No se guardó nada en localStorage");
+            console.log("No hay datos guardados.");
         }
     };
 
@@ -172,17 +166,6 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         }
 
         const stack = [{ x, y }];
-        const offsets = [
-            { dx: 0, dy: 0 },
-            { dx: 1, dy: 0 },
-            { dx: -1, dy: 0 },
-            { dx: 0, dy: 1 },
-            { dx: 0, dy: -1 },
-            { dx: 1, dy: 1 },
-            { dx: 1, dy: -1 },
-            { dx: -1, dy: 1 },
-            { dx: -1, dy: -1 }
-        ];
 
         while (stack.length > 0) {
             const { x: sx, y: sy } = stack.pop();
@@ -197,12 +180,13 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
 
             imageData.data[index] = fillColor.r;
             imageData.data[index + 1] = fillColor.g;
-            imageData.data[index + 1] = fillColor.b;
+            imageData.data[index + 2] = fillColor.b;
             imageData.data[index + 3] = 255;
 
-            offsets.forEach(({ dx, dy }) => {
-                stack.push({ x: sx + dx, y: sy + dy });
-            });
+            stack.push({ x: sx + 1, y: sy });
+            stack.push({ x: sx - 1, y: sy });
+            stack.push({ x: sx, y: sy + 1 });
+            stack.push({ x: sx, y: sy - 1 });
         }
 
         ctx.putImageData(imageData, 0, 0);
@@ -218,6 +202,15 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     };
 
     const colors = ["#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#800080", "#FFA500", "#FFC0CB"];
+
+    const downloadCanvasImage = () => {
+        const canvas = canvasRef.current;
+        const imageData = canvas.toDataURL("image/png"); // Obtiene la imagen del canvas en base64
+        const link = document.createElement("a"); // Crea un enlace temporal para descargar la imagen
+        link.href = imageData;
+        link.download = "pizarron.png"; // Establece el nombre del archivo
+        link.click(); // Simula un clic para descargar
+    };
 
     return (
         <div className={styles.container}>
@@ -320,9 +313,12 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
                 <button onClick={saveCanvas} className={styles.saveButton} disabled={disabled}>
                     Guardar
                 </button>
-                {/* Agregar el botón de cargar imagen */}
                 <button onClick={loadCanvas} className={styles.loadButton} disabled={disabled}>
-                    Cargar imagen
+                    Cargar
+                </button>
+                {/* Nuevo botón para descargar la imagen */}
+                <button onClick={downloadCanvasImage} className={styles.downloadButton} disabled={disabled}>
+                    Descargar Imagen
                 </button>
             </div>
         </div>
