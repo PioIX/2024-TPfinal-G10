@@ -152,7 +152,9 @@ app.post('/cualquierCosa', async (req, res) => {
 
 function getPlayersInRoom(roomCode) {
     const clients = io.sockets.adapter.rooms.get(roomCode);
-    return (Array.from(clients || []).map(socketId => io.sockets.sockets.get(socketId).request.session.username).length);
+    return Array.from(clients || []).map(socketId => {
+        return io.sockets.sockets.get(socketId).request.session.username;
+    });
 }
 
 
@@ -176,11 +178,12 @@ io.on('connection', (socket) => {
         
         console.log(`${nombreJugador} se unió a la sala ${codigoSala}`);
         console.log(getPlayersInRoom(codigoSala))
+        console.log(getPlayersInRoom(codigoSala).length)
         io.to(codigoSala).emit('nuevoUsuario', `${nombreJugador} se ha unido a la sala.`);
     });
     socket.on('getPlayersInRoom', (roomCode, callback) => {
-        const playersCount = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
-        callback(playersCount); 
+        callback(getPlayersInRoom(roomCode)); 
+        io.to(roomCode).emit("playersInRoom")
     });
     
 

@@ -53,7 +53,6 @@
     transform: scale(0.95); 
 }
 
-
 .messageBanner {
     background-color: #d4edda;
     color: #155724;
@@ -111,3 +110,48 @@
         align-items: center;
     }
 }
+
+.playersList {
+    background-color: #ffffff;
+    border: 2px solid #000000;
+    border-radius: 8px;
+    padding: 10px;
+    max-width: 400px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    display: flex;
+    height: 500px;
+    min-height: 100px; 
+    margin-top: 10px;       
+  }
+  
+  .playersList h4 {
+    color: black;              
+    font-size: 18px;           
+    margin-bottom: 10px;       
+  }
+  
+  .playersList ul {
+    list-style-type: none;     
+    padding: 0;               
+    margin: 0;                 
+  }
+  
+  .playersList li {
+    color: black;              
+    font-size: 16px;           
+    padding: 5px 0;            
+    border-bottom: 1px solid #ddd; 
+  }
+  
+  .playersList li:last-child {
+    border-bottom: none;      
+  }
+  
+  .playersList p {
+    color: gray;              
+    font-size: 16px;           
+    text-align: center;        
+  }
+  

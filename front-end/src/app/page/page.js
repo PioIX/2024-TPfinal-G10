@@ -20,20 +20,22 @@ export default function Home() {
     const [room, setRoom] = useState("");
     const [username, setUsername] = useState("");
     const intervalRef = useRef(null);
-    const [usuariosNombre, setUsuariosNombre] = useState("");
+    const [usuariosNombre, setUsuariosNombre] = useState([]);
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const room = urlParams.get('room');
         if (socket && room) {
-            socket.emit('getPlayersInRoom', room, (playersCount) => {
+            socket.on("playersInRoom", () => {
                 setNumJugadores(playersCount.length + 1);
-                setUsuariosNombre(playersCount)
+            })
+            socket.emit('getPlayersInRoom', room, (playersCount) => {
+                setNumJugadores(playersCount.length + 1);  
+                setUsuariosNombre(playersCount);  
             });
         }
     }, [socket]);
     
-
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
@@ -49,7 +51,7 @@ export default function Home() {
     }, []);
 
     useEffect(() => {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+        const apiUrl =  "http://localhost:4000";
         fetch(`${apiUrl}/palabrasObtener`)
             .then((response) => response.json())
             .then((data) => {
@@ -177,18 +179,29 @@ export default function Home() {
                     {message}
                 </div>
             )}
-
             <div className={styles.flexContainer}>
-                <div className="pizarronContainer">
+                <div className={styles.canvasContainer}>
                     <PizarronCanvas
                         clearCanvas={clearCanvas}
                         disabled={!canvasEnabled}
                         canChangeBackground={canChangeBackground}
                     />
                 </div>
-                <div className="chatContainer">
+                <div className={styles.chatContainer}>
                     <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket} />
                 </div>
+            </div>
+            <div className={styles.playersList}>
+                <h4>Usuarios en la sala:</h4>
+                <ul>
+                    {usuariosNombre.length > 0 ? (
+                        usuariosNombre.map((usuario, index) => (
+                            <li key={index}>{usuario}</li>  
+                        ))
+                    ) : (
+                        <p>Cargando usuarios...</p>
+                    )}
+                </ul>
             </div>
         </main>
     );
