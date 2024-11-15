@@ -180,17 +180,6 @@ export default function Home() {
                 </div>
             )}
             <div className={styles.flexContainer}>
-                <div className={styles.canvasContainer}>
-                    <PizarronCanvas
-                        clearCanvas={clearCanvas}
-                        disabled={!canvasEnabled}
-                        canChangeBackground={canChangeBackground}
-                    />
-                </div>
-                <div className={styles.chatContainer}>
-                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket} />
-                </div>
-            </div>
             <div className={styles.playersList}>
                 <h4>Usuarios en la sala:</h4>
                 <ul>
@@ -203,6 +192,18 @@ export default function Home() {
                     )}
                 </ul>
             </div>
+                <div className={styles.canvasContainer}>
+                    <PizarronCanvas
+                        clearCanvas={clearCanvas}
+                        disabled={!canvasEnabled}
+                        canChangeBackground={canChangeBackground}
+                    />
+                </div>
+                <div className={styles.chatContainer}>
+                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket} />
+                </div>
+            </div>
+            
         </main>
     );
 }
