@@ -246,7 +246,7 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                     className={styles.fillButton}
                     disabled={disabled}
                 >
-                    {isFilling ? "Desactivar Rellenar" : "Activar Rellenar"}
+                    
                 </button>
             </div>
             <div className={styles.actionButtons}>
