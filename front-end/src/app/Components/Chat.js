@@ -1,4 +1,3 @@
-"use client";
 import React, { useEffect, useRef, useState } from "react";
 import styles from './Chat.module.css';
 
@@ -71,7 +70,7 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
 
             if (normalizedInput === normalizedPalabra) {
                 responseMessage = { text: "palabra correcta", sender: 'bot', className: styles.correctMessage };
-                onCorrectGuess();
+                onCorrectGuess(username);  // Pasar el nombre del jugador que adivinó correctamente
             } else if (isCasi(normalizedInput, normalizedPalabra)) {
                 responseMessage = { text: "casi", sender: 'bot', className: styles.casiMessage };
             }
@@ -123,4 +122,3 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
         </div>
     );
 }
-    

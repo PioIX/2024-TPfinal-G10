@@ -13,11 +13,23 @@
 }
 
 .hola {
-    color: black;
-    margin-top: 10px;
-    gap: 10px; 
-    font-size: 20px;
-}
+    font-family: 'Arial', sans-serif; /* Tipografía moderna y limpia */
+    font-size: 1.5rem; /* Tamaño de fuente grande */
+    color: #2D2D2D; /* Un color de texto neutro */
+    text-transform: uppercase; /* Texto en mayúsculas */
+    letter-spacing: 3px; /* Espaciado entre letras */
+    background-image: linear-gradient(90deg, #000000, #000000); /* Fondo degradado vibrante */
+    background-clip: text; /* Aplica el degradado solo al texto */
+    color: transparent; /* Hace el texto transparente para que el fondo degradado sea visible */
+    padding: 10px 20px; /* Un poco de relleno alrededor del texto */
+    border-radius: 5px; /* Bordes redondeados */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra suave para resaltar */
+    transition: transform 0.3s ease-in-out, color 0.3s ease; /* Efecto de transición suave */
+  }
+
+  
+  
+  
 
 
 .seleccionPalabra {
@@ -121,10 +133,10 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    height: 500px; /* Altura fija */
-    min-height: 100px;
+    height: 503px; /* Altura fija */
+    min-height: 110px;
     margin-top: 10px;
-    margin-left: 100px;
+    margin-left: 60px;
     order: -1; /* Mueve .playersList al principio del contenedor flex */
 }
   .playersList h4 {

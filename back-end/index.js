@@ -169,7 +169,7 @@ io.on('connection', (socket) => {
        
         socket.to(socket.request.session.room).emit('receiveMessage', message);
     });
-
+    
     socket.on('unirseSala', (data) => {
         const { codigoSala, nombreJugador } = data;
         socket.request.session.room = codigoSala;

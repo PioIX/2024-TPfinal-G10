@@ -22,6 +22,7 @@ export default function Home() {
     const [username, setUsername] = useState("");
     const intervalRef = useRef(null);
     const [usuariosNombre, setUsuariosNombre] = useState([]);
+    const [puntajes, setPuntajes] = useState({}); // Estado para puntajes
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -41,7 +42,6 @@ export default function Home() {
             socket?.off("playersInRoom");
         };
     }, [socket]);
-
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -135,8 +135,15 @@ export default function Home() {
         }
     };
 
-    const handleCorrectGuess = () => {
+    const handleCorrectGuess = (jugador) => {
         setMessage("¡Palabra correcta!");
+
+        // Actualizar puntaje
+        setPuntajes((prevPuntajes) => ({
+            ...prevPuntajes,
+            [jugador]: (prevPuntajes[jugador] || 0) + 500, // Sumar 500 puntos
+        }));
+
         resetGame();
         setTimeout(() => {
             setMessage("");
@@ -154,85 +161,80 @@ export default function Home() {
     }, [usoPalabra]);
 
     return (
-        <>
-
-            <main className={styles.container}>
-                <div className={styles.wordSection}>
-                    <p className={styles.hola}>Jugadores en la sala: {numJugadores}</p>
-                    {palabraActual ? (
-                        <>
-                            <p className={styles.word}>{palabraActual}</p>
-                            <h3 className={timerClass}>{segundos} segundos</h3>
-                        </>
-                    ) : (
-                        <div className={styles.seleccionPalabra}>
-                            <h3>Selecciona una palabra:</h3>
-                            {palabrasSeleccionadas.length > 0 ? (
-                                palabrasSeleccionadas.map((palabra, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => manejarSeleccionPalabra(palabra)}
-                                        aria-label={`Seleccionar palabra: ${palabra}`}
-                                    >
-                                        {palabra}
-                                    </button>
-                                ))
-                            ) : (
-                                <p>Cargando palabras...</p>
-                            )}
-                        </div>
-                    )}
-                </div>
-                {message && (
-                    <div className={styles.messageBanner}>
-                        {message}
+        <main className={styles.container}>
+            <div className={styles.wordSection}>
+               
+                {palabraActual ? (
+                    <>
+                        <p className={styles.word}>{palabraActual}</p>
+                        <h3 className={timerClass}>{segundos} segundos</h3>
+                    </>
+                ) : (
+                    <div className={styles.seleccionPalabra}>
+            
+                        {palabrasSeleccionadas.length > 0 ? (
+                            palabrasSeleccionadas.map((palabra, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => manejarSeleccionPalabra(palabra)}
+                                    aria-label={`Seleccionar palabra: ${palabra}`}
+                                >
+                                    {palabra}
+                                </button>
+                            ))
+                        ) : (
+                            <p>Cargando palabras...</p>
+                        )}
                     </div>
                 )}
-                <div className={styles.flexContainer}>
-                    <div className={styles.playersList}>
-                        <h4>Usuarios en la sala:</h4>
-                        <ul>
-                            {usuariosNombre.length > 0 ? (
-                                (() => {
-                                    const nameCounts = {};
-                                    const processedNames = {};
-                                    usuariosNombre.forEach((usuario) => {
-                                        nameCounts[usuario] = (nameCounts[usuario] || 0) + 1;
-                                    });
-                                    return usuariosNombre.map((usuario, index) => {
-                                        processedNames[usuario] = (processedNames[usuario] || 0) + 1;
-                                        const occurrence = processedNames[usuario];
-                                        let displayName = nameCounts[usuario] > 1
-                                            ? `${usuario} (${occurrence})`
-                                            : usuario;
-                                        if (usuario === username && occurrence === 1) {
-                                            displayName = `${displayName} (vos)`;
-                                        }
+            </div>
+            {message && <div className={styles.messageBanner}>{message}</div>}
 
-                                        return <li key={`${usuario}-${occurrence}`}>{displayName}</li>;
-                                    });
-                                })()
-                            ) : (
-                                <p>Cargando usuarios...</p>
-                            )}
-                        </ul>
-                    </div>
+            <div className={styles.flexContainer}>
+                <div className={styles.playersList}>
+                    <h4>Usuarios en la sala:</h4>
+                    <ul>
+                        {usuariosNombre.length > 0 ? (
+                            (() => {
+                                const nameCounts = {};
+                                const processedNames = {};
+                                return usuariosNombre.map((usuario, index) => {
+                                    processedNames[usuario] = (processedNames[usuario] || 0) + 1;
+                                    const occurrence = processedNames[usuario];
+                                    let displayName = nameCounts[usuario] > 1
+                                        ? `${usuario} (${occurrence})`
+                                        : usuario;
+                                    if (usuario === username && occurrence === 1) {
+                                        displayName = `${displayName} (vos)`;
+                                    }
 
-
-
-                    <div className={styles.canvasContainer}>
-                        <PizarronCanvas
-                            clearCanvas={clearCanvas}
-                            disabled={!canvasEnabled}
-                            canChangeBackground={canChangeBackground}
-                        />
-                    </div>
-                    <div className={styles.chatContainer}>
-                        <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket} />
-                    </div>
+                                    // Mostrar nombre y puntaje
+                                    const puntaje = puntajes[usuario] || 0;  // Si no tiene puntaje, muestra 0
+                                    return (
+                                        <li key={`${usuario}-${occurrence}`}>
+                                            {displayName}: {puntaje} puntos
+                                        </li>
+                                    );
+                                });
+                            })()
+                        ) : (
+                            <p>Cargando usuarios...</p>
+                        )}
+                    </ul>
                 </div>
 
-            </main>
-        </>
+                <div className={styles.canvasContainer}>
+                    <PizarronCanvas
+                        clearCanvas={clearCanvas}
+                        disabled={!canvasEnabled}
+                        canChangeBackground={canChangeBackground}
+                    />
+                </div>
+
+                <div className={styles.chatContainer}>
+                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket} />
+                </div>
+            </div>
+        </main>
     );
 }
