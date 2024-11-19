@@ -1,11 +1,38 @@
-"use client"; 
 import React, { useEffect, useRef, useState } from "react";
 import styles from './Chat.module.css';
 
-export default function Chat({ palabraActual, onCorrectGuess }) {
+export default function Chat({ palabraActual, onCorrectGuess, socket }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const messageEndRef = useRef(null);
+    const [username, setUsername] = useState(""); // Agregado para obtener el nombre desde la URL
+
+    useEffect(() => {
+        // Extraer el username desde los parámetros de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const playerName = urlParams.get('username');
+        
+        if (playerName) {
+            setUsername(playerName); // Establecer el nombre del jugador desde el parámetro URL
+        } else {
+            setUsername("Usuario desconocido"); // Valor por defecto si no se encuentra el nombre
+        }
+    }, []); // Se ejecuta una sola vez cuando el componente se monta
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on('receiveMessage', (message) => {
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                message
+            ]);
+        });
+
+        return () => {
+            socket.off('receiveMessage');
+        };
+    }, [socket]);
 
     const normalizeString = (str) => {
         return str
@@ -29,7 +56,7 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
                 }
             }
 
-            return differences <= 1; // Permitir hasta una letra diferente
+            return differences <= 1; 
         }
         return false;
     };
@@ -42,16 +69,21 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
             let responseMessage = null;
 
             if (normalizedInput === normalizedPalabra) {
-                responseMessage = { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot', className: styles.correctMessage };
-                onCorrectGuess(); // Pasar 100 puntos a la función
+                responseMessage = { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot', className: styles.correctMessage  };
+                onCorrectGuess(username);  // Pasar el nombre del jugador que adivinó correctamente
+
             } else if (isCasi(normalizedInput, normalizedPalabra)) {
                 responseMessage = { text: "Casi, sigue intentando.", sender: 'bot', className: styles.casiMessage };
             }
 
-            const newMessage = `${localStorage.getItem("username")}: ${input}`;
+            const newMessage = { text: `${username}: ${input}`, sender: 'user' };
+
+            // Emitir mensaje al servidor
+            socket.emit('sendMessage', newMessage);
+
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: newMessage, sender: 'user' },
+                newMessage,
                 responseMessage && responseMessage
             ].filter(Boolean));
 

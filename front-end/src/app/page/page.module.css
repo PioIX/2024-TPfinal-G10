@@ -1,24 +1,45 @@
 .container {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: row;
     background-color: rgba(253, 249, 237, 255);
-    padding: 20px;
+    padding: 0px;
     border-radius: 8px;
     box-shadow: 0 4px 10px hsl(0, 0%, 0%);
     width: 100%;
-    min-height: 100vh;
-    position: relative; /* Añadido para el posicionamiento del banner */
+    min-height: 0;
+    margin: 0px;
+    position: relative; 
 }
+
+.hola {
+    font-family: 'Arial', sans-serif; /* Tipografía moderna y limpia */
+    font-size: 1.5rem; /* Tamaño de fuente grande */
+    color: #2D2D2D; /* Un color de texto neutro */
+    text-transform: uppercase; /* Texto en mayúsculas */
+    letter-spacing: 3px; /* Espaciado entre letras */
+    background-image: linear-gradient(90deg, #000000, #000000); /* Fondo degradado vibrante */
+    background-clip: text; /* Aplica el degradado solo al texto */
+    color: transparent; /* Hace el texto transparente para que el fondo degradado sea visible */
+    padding: 10px 20px; /* Un poco de relleno alrededor del texto */
+    border-radius: 5px; /* Bordes redondeados */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra suave para resaltar */
+    transition: transform 0.3s ease-in-out, color 0.3s ease; /* Efecto de transición suave */
+  }
+
+  
+  
+  
+
 
 .seleccionPalabra {
     color: black;
     display: flex;
-    flex-direction: row; /* Cambia la dirección a horizontal */
-    justify-content: center; /* Centra los botones horizontalmente */
+    flex-direction: row; 
+    justify-content: center; 
     margin-top: 20px;
-    gap: 10px; /* Espacio entre los botones */
-    flex-wrap: nowrap; /* Evita que los botones se muevan a la siguiente línea */
+    gap: 10px; 
+    flex-wrap: nowrap; 
     font-size: 20px;
 }
 
@@ -31,33 +52,32 @@
     font-size: 1.2rem;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.2s;
-    white-space: nowrap; /* Evita que el texto se divida en varias líneas */
-    overflow: hidden; /* Esconde el texto que se desborda */
-    text-overflow: ellipsis; /* Muestra puntos suspensivos si el texto es muy largo */
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis; 
 }
 
 .seleccionPalabra button:hover {
-    background-color: hsl(0, 0%, 21%); /* Verde más oscuro */
-    transform: scale(1.05); /* Efecto de aumento */
+    background-color: hsl(0, 0%, 21%); 
+    transform: scale(1.05); 
 }
 
 .seleccionPalabra button:active {
-    transform: scale(0.95); /* Efecto de pulsación */
+    transform: scale(0.95); 
 }
-
 
 .messageBanner {
     background-color: #d4edda;
     color: #155724;
-    padding: 10px; /* Aumenta el padding para que se vea mejor */
+    padding: 10px; 
     border-radius: 5px;
     text-align: center;
-    position: fixed; /* Cambia a fixed para que esté en toda la pantalla */
-    top: 0; /* Ajusta a la parte superior */
-    left: 0; /* Comienza desde el borde izquierdo */
-    width: 100vw; /* Abarca toda la anchura de la pantalla */
-    z-index: 100; /* Asegúrate de que esté encima de otros elementos */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Añade sombra para darle profundidad */
+    position: fixed;
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    z-index: 100; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
 }
 
 .wordSection {
@@ -103,3 +123,48 @@
         align-items: center;
     }
 }
+.playersList {
+    background-color: #ffffff;
+    border: 2px solid #000000;
+    border-radius: 8px;
+    padding: 10px;
+    max-width: 668px; /* Ancho fijo */
+    min-width: 200px; /* Ancho fijo */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    height: 503px; /* Altura fija */
+    min-height: 110px;
+    margin-top: 10px;
+    margin-left: 60px;
+    order: -1; /* Mueve .playersList al principio del contenedor flex */
+}
+  .playersList h4 {
+    color: black;              
+    font-size: 18px;           
+    margin-bottom: 10px;       
+  }
+  
+  .playersList ul {
+    list-style-type: none;     
+    padding: 0;               
+    margin: 0;                 
+  }
+  
+  .playersList li {
+    color: black;              
+    font-size: 16px;           
+    padding: 5px 0;            
+    border-bottom: 1px solid #ddd; 
+  }
+  
+  .playersList li:last-child {
+    border-bottom: none;      
+  }
+  
+  .playersList p {
+    color: gray;              
+    font-size: 16px;           
+    text-align: center;        
+  }
+  

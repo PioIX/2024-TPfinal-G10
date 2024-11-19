@@ -1,6 +1,6 @@
-"use client"; 
+'use client';
 import React, { useState, useEffect } from 'react';
-import styles from './page.module.css'; 
+import styles from './page.module.css';
 
 const GameRoom = () => {
   const [gameCode, setGameCode] = useState('');
@@ -22,7 +22,7 @@ const GameRoom = () => {
       }
     };
     fetchRooms();
-  }, []); 
+  }, []);
 
   const handleJoinGame = async (event) => {
     event.preventDefault();
@@ -35,8 +35,9 @@ const GameRoom = () => {
           },
           body: JSON.stringify({ nombre: userName }),
         });
-        localStorage.setItem("username", userName);
-        window.location.href = "http://localhost:3000/page"; 
+
+        window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}`; 
+
         setError('');
       } catch (err) {
         console.error('Error guardando nombre:', err);
@@ -82,7 +83,9 @@ const GameRoom = () => {
         setUserName('');
         document.getElementById('createGameModal').close(); 
         setError('');
-        window.location.href = "/page"; 
+
+        window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}`; 
+
       } catch (err) {
         setError('Error al crear la sala.');
         console.error('Error:', err);
@@ -126,6 +129,7 @@ const GameRoom = () => {
         </form>
         <button className={styles.button} onClick={() => document.getElementById('createGameModal').showModal()}>Crear Juego</button>
       </div>
+
       <dialog id="createGameModal" className={styles.modal}>
         <form onSubmit={handleCreateGame}>
           <label htmlFor="newGameCode" className={styles.label}>Código del Juego</label>
@@ -172,7 +176,8 @@ const GameRoom = () => {
         {error && <p className={styles.error}>{error}</p>}
       </dialog>
 
-    </div>
+      </div>
+
   );
 };
 

@@ -3,7 +3,8 @@
     border: 2px solid #000000;
     border-radius: 8px;
     padding: 10px;
-    max-width: 400px;
+    max-width: 250px;
+    min-width: 250px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
@@ -46,6 +47,7 @@
 .inputContainer {
     display: flex;
     align-items: center;
+    min-width: 200px;
 }
 
 .inputField {
@@ -54,10 +56,11 @@
     border: 1px solid #ccc;
     border-radius: 4px;
     margin-right: 10px;
+    min-width: 105px;
 }
 
 .sendButton {
-    background-color: #000000; /* Botón azul */
+    background-color: #000000; 
     color: white;
     border: none;
     border-radius: 4px;
@@ -66,5 +69,6 @@
 }
 
 .sendButton:hover {
-    background-color: #141414; /* Color más oscuro al pasar el mouse */
+    background-color: #141414; 
 }
+

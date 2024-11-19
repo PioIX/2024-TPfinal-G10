@@ -3,103 +3,198 @@
     flex-direction: column;
     align-items: center;
     margin: 10px;
+    font-family: 'Poppins', sans-serif; 
 }
 
 .canvas {
-    border: 2px solid #000000;
-    border-radius: 8px;
-    background-color: #ffffff;
-    cursor: crosshair;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 2px solid #000000; 
+    border-radius: 12px; 
+    background-color: #ffffff; 
+    cursor: crosshair; 
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); 
+    transition: box-shadow 0.3s ease-in-out; 
+}
+
+.canvas:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); 
 }
 
 .controls {
     display: flex;
     align-items: center;
-    margin: 10px 0;
-}
-
-.fillButton {
-    background-color: lightgray; /* Verde para indicar que guarda */
-    color: black;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-left: 10px;
-    transition: background-color 0.3s;
-}
-
-.saveButton {
-    background-color: #28a745; /* Verde para indicar que guarda */
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-left: 10px;
-    transition: background-color 0.3s;
-}
-
-.saveButton:hover {
-    background-color: #218838; /* Un verde más oscuro al pasar el ratón */
-}
-
-.saveButton:active {
-    background-color: #1e7e34; /* Aún más oscuro al hacer clic */
+    margin: 15px 0;
 }
 
 .colorButton {
-    width: 40px;
-    height: 40px;
-    margin-right: 5px;
-    border: none;
+    width: 45px;
+    height: 45px;
+    margin-right: 10px;
+    border: 2px solid #000000; 
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 12px; 
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s ease;
 }
 
-.colorInput {
+.colorButton:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: #000; 
+}
+
+.colorButton:active {
+    transform: scale(0.95);
+}
+
+.backgroundColorSelector button {
+    width: 45px;
+    height: 45px;
     margin-right: 10px;
-    border: 2px solid #ccc;
-    border-radius: 4px;
-    width: 50px;
+    border: 10px solid #000000; 
+    cursor: pointer;
+    border-radius: 12px;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s ease;
+}
+
+
+.backgroundColorSelector button:hover {
+    transform: scale(1.1); 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+    border-color: #000; 
+}
+
+.colorPicker {
+        border: 2px solid #000000;
+        border-radius: 8px;
+    padding: 5px;
+    margin-left: 15px;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.colorPicker:hover {
+    border-color: #888;
 }
 
 .rangeInput {
-    margin: 0 10px;
+    margin: 0 15px;
+    width: 100px;
 }
 
 .eraserButton {
-    background-color: lightgray;
-    color: black;
-    padding: 10px 15px;
+    background-color: #f4f4f9;
+    color: #333;
+    padding: 12px 18px;
     margin-left: 10px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s ease;
+}
+
+.eraserButton:hover {
+    background-color: #e1e1e6; 
+    transform: scale(1.05);
+}
+
+.eraserButton:active {
+    transform: scale(0.98); 
 }
 
 .actionButtons {
     display: flex;
     justify-content: center;
-    margin-top: 10px;
+    margin-top: 20px;
+}
+
+.undoButton,
+.clearButton,
+.saveButton {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s ease, box-shadow 0.3s ease;
+    margin: 5px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.undoButton:hover,
+.clearButton:hover,
+.saveButton:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); 
+}
+
+.undoButton:active,
+.clearButton:active,
+.saveButton:active {
+    transform: scale(0.98);
 }
 
 .undoButton {
     background-color: #007bff;
     color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 10px;
 }
 
 .clearButton {
     background-color: #dc3545;
     color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
+}
+
+.saveButton {
+    background-color: #28a745;
+    color: white;
+}
+
+.undoButton:hover {
+    background-color: #0056b3;
+}
+
+.clearButton:hover {
+    background-color: #c82333;
+}
+
+.saveButton:hover {
+    background-color: #218838;
+}
+
+.undoButton:active {
+    background-color: #0056b3;
+}
+
+.clearButton:active {
+    background-color: #c82333;
+}
+
+.saveButton:active {
+    background-color: #218838;
+}
+
+.backgroundColorSelector {
+    display: flex;
+    flex-wrap: wrap; 
+    margin: 20px 0;
+}
+
+.backgroundColorSelector h4 {
+    font-size: 18px;
+    color: #333;
+    margin-top: 5px;
+}
+
+.backgroundColorSelector button {
+    margin: 0 5px;
+    border: 2px solid #000000;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
     cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s ease;
+}
+
+.backgroundColorSelector button:hover {
+    transform: scale(1.1); 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+    border-color: #000; 
 }

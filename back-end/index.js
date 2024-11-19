@@ -2,52 +2,46 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const db = require('./modulos/mysql');
 const session = require('express-session');
-var cors = require('cors')
-
+var cors = require('cors');
 const app = express();
+
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(cors())
+app.use(cors());
+
 
 const LISTEN_PORT = 4000;
 const server = app.listen(LISTEN_PORT, () => {
-	console.log(`Servidor NodeJS corriendo en http://localhost:${LISTEN_PORT}/`);
-});;
-
-const io = require('socket.io')(server, {
-	cors: {
-		origin: ["http://localhost:3000", "http://localhost:3001"],
-		methods: ["GET", "POST", "PUT", "DELETE"],
-		credentials: true
-	}
+    console.log(`Servidor NodeJS corriendo en http://localhost:${LISTEN_PORT}/`);
 });
 
+
+const io = require('socket.io')(server, {
+    cors: {
+        origin: ["http://localhost:3000", "http://localhost:3001"], 
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true
+    }
+});
+
+
 const sessionMiddleware = session({
-	secret: "ositos",
-	resave: false,
-	saveUninitialized: false
+    secret: "ositos",  
+    resave: false,
+    saveUninitialized: false
 });
 
 app.use(sessionMiddleware);
 
+
 io.use((socket, next) => {
-	sessionMiddleware(socket.request, {}, next);
+    sessionMiddleware(socket.request, socket.request.res || {}, next);
 });
 
-// Obtener contactos
 app.get('/entrarSala', async (req, res) => {
 	try {
 		const results = await db.query('SELECT * FROM salas');
-		res.json(results);
-	} catch (err) {
-		res.status(500).send(err);
-	}
-});
-
-app.get('/palabrasObtener', async (req, res) => {
-	try {
-		const results = await db.query('SELECT * FROM palabras2');
 		res.json(results);
 	} catch (err) {
 		res.status(500).send(err);
@@ -96,14 +90,30 @@ app.post('/sendMessage', async (req, res) => {
 	}
   });
 
-  
-// Obtener mensajes
 app.get('/chats', (req, res) => {
 	const { chatId } = req.params;
 	db.query('SELECT * FROM messages WHERE chat_id = ?', [chatId], (err, results) => {
 		if (err) return res.status(500).send(err);
 		res.json(results);
 	});
+});
+
+app.get('/ultimoNombre', async (req, res) => {
+    try {
+        const results = await db.query('SELECT nombre FROM nombres ORDER BY id DESC LIMIT 1');
+        res.json(results[0]);
+    } catch (err) {
+        res.status(500).send({ error: 'Error al obtener el último nombre', details: err });
+    }
+});
+
+app.get('/palabrasObtener', async (req, res) => {
+    try {
+        const results = await db.query('SELECT * FROM palabras2');
+        res.json(results);
+    } catch (err) {
+        res.status(500).send({ error: 'Error al obtener las palabras', details: err });
+    }
 });
 
 app.get('/chats/:chatId', (req, res) => {
@@ -114,7 +124,6 @@ app.get('/chats/:chatId', (req, res) => {
 	});
   });
 
-// Enviar un nuevo mensaje
 app.post('/chats', (req, res) => {
 	const { chatId, sender, text } = req.body;
 	db.query(
@@ -141,64 +150,51 @@ app.post('/cualquierCosa', async (req, res) => {
     }
 });
 
-app.get('/', (req, res) => {
-	console.log(`[REQUEST - ${req.method}] ${req.url}`);
+function getPlayersInRoom(roomCode) {
+    const clients = io.sockets.adapter.rooms.get(roomCode);
+    return Array.from(clients || []).map(socketId => {
+        return io.sockets.sockets.get(socketId).request.session.username;
+    });
+}
+
+
+io.on('connection', (socket) => {
+    console.log('Nuevo cliente conectado');
+    socket.on('sendMessage', (message) => {
+        if (!message || !message.text || !socket.request.session.room) {
+            console.error('Mensaje o sala inválidos', message);
+
+            return;
+        }
+       
+        socket.to(socket.request.session.room).emit('receiveMessage', message);
+    });
+    
+    socket.on('unirseSala', (data) => {
+        const { codigoSala, nombreJugador } = data;
+        socket.request.session.room = codigoSala;
+        socket.request.session.username = nombreJugador;
+        socket.join(codigoSala);
+    
+        const players = getPlayersInRoom(codigoSala);
+        io.to(codigoSala).emit('playersInRoom', players); // Emitir lista actualizada
+    });
+    socket.on('getPlayersInRoom', (roomCode, callback) => {
+        const players = getPlayersInRoom(roomCode); 
+        callback(players); 
+        io.to(roomCode).emit("playersInRoom", players); 
+    });
+    
+    
+
+    socket.on('disconnect', () => {
+        const roomCode = socket.request.session.room;
+        const playerName = socket.request.session.username;
+
+        if (roomCode && playerName) {
+            console.log(`${playerName} se ha desconectado de la sala ${roomCode}`);
+            console.log(getPlayersInRoom(roomCode))
+            io.to(roomCode).emit('nuevoUsuario', `${playerName} se ha desconectado.`);
+        }
+    });
 });
-
-app.post('/login', (req, res) => {
-	console.log(`[REQUEST - ${req.method}] ${req.url}`);
-});
-
-app.delete('/login', (req, res) => {
-	console.log(`[REQUEST - ${req.method}] ${req.url}`);
-	res.send(null);
-});
-
-io.on("a", (socket) => {
-	const req = socket.request;
-
-	socket.on('joinRoom', data => {
-		console.log("🚀 ~ io.on ~ req.session.room:", req.session.room)
-		if (req.session.room != undefined && req.session.room.length > 0)
-			socket.leave(req.session.room);
-		req.session.room = data.room;
-		socket.join(req.session.room);
-
-		io.to(req.session.room).emit('chat-messages', { user: req.session.user, room: req.session.room });
-	});
-
-	socket.on('pingAll', data => {
-		console.log("PING ALL: ", data);
-		io.emit('pingAll', { event: "Ping to all", message: data });
-	});
-
-	socket.on('sendMessage', data => {
-		io.to(req.session.room).emit('newMessage', { room: req.session.room, message: data });
-	});
-
-	socket.on('disconnect', () => {
-		console.log("Disconnect");
-	})
-});
-app.post('/guardarNombre', async (req, res) => {
-	const { nombre } = req.body;
-	try {
-	  const results = await db.query(
-		`INSERT INTO nombres (nombre) VALUES ('${nombre}')`
-	  );
-	  res.status(201).json(results);
-	} catch (err) {
-	  res.status(500).send(err);
-	}
-  });
-  app.get('/ultimoNombre', async (req, res) => {
-	try {
-	  const results = await db.query('SELECT nombre FROM nombres ORDER BY id DESC LIMIT 1');
-	  res.json(results[0]); // Esto debería funcionar si results[0] contiene el nombre
-	} catch (err) {
-	  res.status(500).send(err);
-	}
-});
-app
-
-  
