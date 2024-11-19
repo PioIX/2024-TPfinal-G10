@@ -1,10 +1,39 @@
-import React, { useEffect, useRef, useState } from 'react';
-import styles from './chat.module.css';
+"use client";
+import React, { useEffect, useRef, useState } from "react";
+import styles from './Chat.module.css';
 
-const Chat = ({ palabraActual, onCorrectGuess }) => {
+export default function Chat({ palabraActual, onCorrectGuess, socket }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const messageEndRef = useRef(null);
+    const [username, setUsername] = useState(""); // Agregado para obtener el nombre desde la URL
+
+    useEffect(() => {
+        // Extraer el username desde los parámetros de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const playerName = urlParams.get('username');
+        
+        if (playerName) {
+            setUsername(playerName); // Establecer el nombre del jugador desde el parámetro URL
+        } else {
+            setUsername("Usuario desconocido"); // Valor por defecto si no se encuentra el nombre
+        }
+    }, []); // Se ejecuta una sola vez cuando el componente se monta
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on('receiveMessage', (message) => {
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                message
+            ]);
+        });
+
+        return () => {
+            socket.off('receiveMessage');
+        };
+    }, [socket]);
 
     const normalizeString = (str) => {
         return str
@@ -17,7 +46,6 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
         const normalizedInput = normalizeString(input);
         const normalizedActual = normalizeString(actual);
         
-        // Verifica si el input tiene la misma longitud que la palabra actual o una letra menos
         if (normalizedInput.length === normalizedActual.length || normalizedInput.length + 1 === normalizedActual.length) {
             const inputSet = new Set(normalizedInput);
             const actualSet = new Set(normalizedActual);
@@ -29,16 +57,16 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
                 }
             }
 
-            return differences <= 1; // Permitir hasta una letra diferente
+            return differences <= 1; 
         }
         return false;
     };
 
-    const sendMessage = () => {
+    const sendMessage = (e) => {
+        e.preventDefault();
         if (input.trim()) {
             const normalizedInput = normalizeString(input.trim());
             const normalizedPalabra = normalizeString(palabraActual);
-
             let responseMessage = null;
 
             if (normalizedInput === normalizedPalabra) {
@@ -48,19 +76,18 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
                 responseMessage = { text: "casi", sender: 'bot', className: styles.casiMessage };
             }
 
+            const newMessage = { text: `${username}: ${input}`, sender: 'user' };
+
+            // Emitir mensaje al servidor
+            socket.emit('sendMessage', newMessage);
+
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: input, sender: 'user' },
+                newMessage,
                 responseMessage && responseMessage
             ].filter(Boolean));
 
             setInput("");
-        }
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === "Enter") {
-            sendMessage();
         }
     };
 
@@ -72,6 +99,7 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
 
     return (
         <div className={styles.chatContainer}>
+            <h2 className="text-lg font-bold mb-2">Chat</h2>
             <div className={styles.messageList}>
                 {messages.map((msg, index) => (
                     <div key={index} className={`${styles.message} ${msg.sender === 'user' ? styles.userMessage : msg.className}`}>
@@ -80,19 +108,19 @@ const Chat = ({ palabraActual, onCorrectGuess }) => {
                 ))}
                 <div ref={messageEndRef} />
             </div>
-            <div className={styles.inputContainer}>
+            <form onSubmit={sendMessage} className={styles.inputContainer}>
                 <input
                     type="text"
-                    className={styles.inputField}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyPress}
+                    className={styles.inputField}
                     placeholder="Escribe un mensaje..."
                 />
-                <button className={styles.sendButton} onClick={sendMessage}>Enviar</button>
-            </div>
+                <button type="submit" className={styles.sendButton}>
+                    Enviar
+                </button>
+            </form>
         </div>
     );
-};
-
-export default Chat;
+}
+    

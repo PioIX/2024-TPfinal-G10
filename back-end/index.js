@@ -175,16 +175,16 @@ io.on('connection', (socket) => {
         socket.request.session.room = codigoSala;
         socket.request.session.username = nombreJugador;
         socket.join(codigoSala);
-        
-        console.log(`${nombreJugador} se unió a la sala ${codigoSala}`);
-        console.log(getPlayersInRoom(codigoSala))
-        console.log(getPlayersInRoom(codigoSala).length)
-        io.to(codigoSala).emit('nuevoUsuario', `${nombreJugador} se ha unido a la sala.`);
+    
+        const players = getPlayersInRoom(codigoSala);
+        io.to(codigoSala).emit('playersInRoom', players); // Emitir lista actualizada
     });
     socket.on('getPlayersInRoom', (roomCode, callback) => {
-        callback(getPlayersInRoom(roomCode)); 
-        io.to(roomCode).emit("playersInRoom")
+        const players = getPlayersInRoom(roomCode); 
+        callback(players); 
+        io.to(roomCode).emit("playersInRoom", players); 
     });
+    
     
 
     socket.on('disconnect', () => {

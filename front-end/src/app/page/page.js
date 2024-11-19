@@ -4,6 +4,7 @@ import PizarronCanvas from "../Components/Pizarron";
 import Chat from "../Components/Chat";
 import styles from "./page.module.css";
 import { useSocket } from "../hooks/useSocket";
+import Head from "next/head";
 
 export default function Home() {
     const [palabras, setPalabras] = useState([]);
@@ -26,16 +27,22 @@ export default function Home() {
         const urlParams = new URLSearchParams(window.location.search);
         const room = urlParams.get('room');
         if (socket && room) {
-            socket.on("playersInRoom", () => {
-                setNumJugadores(playersCount.length + 1);
-            })
-            socket.emit('getPlayersInRoom', room, (playersCount) => {
-                setNumJugadores(playersCount.length + 1);  
-                setUsuariosNombre(playersCount);  
+            socket.on("playersInRoom", (players) => {
+                setNumJugadores(players.length);
+                setUsuariosNombre(players);
+            });
+            socket.emit('getPlayersInRoom', room, (players) => {
+                setNumJugadores(players.length);
+                setUsuariosNombre(players);
             });
         }
+
+        return () => {
+            socket?.off("playersInRoom");
+        };
     }, [socket]);
-    
+
+
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
@@ -51,7 +58,7 @@ export default function Home() {
     }, []);
 
     useEffect(() => {
-        const apiUrl =  "http://localhost:4000";
+        const apiUrl = "http://localhost:4000";
         fetch(`${apiUrl}/palabrasObtener`)
             .then((response) => response.json())
             .then((data) => {
@@ -147,63 +154,85 @@ export default function Home() {
     }, [usoPalabra]);
 
     return (
-        <main className={styles.container}>
-            <div className={styles.wordSection}>
-                <p className={styles.hola}>Jugadores en la sala: {numJugadores}</p>
-                {palabraActual ? (
-                    <>
-                        <p className={styles.word}>{palabraActual}</p>
-                        <h3 className={timerClass}>{segundos} segundos</h3>
-                    </>
-                ) : (
-                    <div className={styles.seleccionPalabra}>
-                        <h3>Selecciona una palabra:</h3>
-                        {palabrasSeleccionadas.length > 0 ? (
-                            palabrasSeleccionadas.map((palabra, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => manejarSeleccionPalabra(palabra)}
-                                    aria-label={`Seleccionar palabra: ${palabra}`}
-                                >
-                                    {palabra}
-                                </button>
-                            ))
-                        ) : (
-                            <p>Cargando palabras...</p>
-                        )}
+        <>
+
+            <main className={styles.container}>
+                <div className={styles.wordSection}>
+                    <p className={styles.hola}>Jugadores en la sala: {numJugadores}</p>
+                    {palabraActual ? (
+                        <>
+                            <p className={styles.word}>{palabraActual}</p>
+                            <h3 className={timerClass}>{segundos} segundos</h3>
+                        </>
+                    ) : (
+                        <div className={styles.seleccionPalabra}>
+                            <h3>Selecciona una palabra:</h3>
+                            {palabrasSeleccionadas.length > 0 ? (
+                                palabrasSeleccionadas.map((palabra, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => manejarSeleccionPalabra(palabra)}
+                                        aria-label={`Seleccionar palabra: ${palabra}`}
+                                    >
+                                        {palabra}
+                                    </button>
+                                ))
+                            ) : (
+                                <p>Cargando palabras...</p>
+                            )}
+                        </div>
+                    )}
+                </div>
+                {message && (
+                    <div className={styles.messageBanner}>
+                        {message}
                     </div>
                 )}
-            </div>
-            {message && (
-                <div className={styles.messageBanner}>
-                    {message}
+                <div className={styles.flexContainer}>
+                    <div className={styles.playersList}>
+                        <h4>Usuarios en la sala:</h4>
+                        <ul>
+                            {usuariosNombre.length > 0 ? (
+                                (() => {
+                                    const nameCounts = {};
+                                    const processedNames = {};
+                                    usuariosNombre.forEach((usuario) => {
+                                        nameCounts[usuario] = (nameCounts[usuario] || 0) + 1;
+                                    });
+                                    return usuariosNombre.map((usuario, index) => {
+                                        processedNames[usuario] = (processedNames[usuario] || 0) + 1;
+                                        const occurrence = processedNames[usuario];
+                                        let displayName = nameCounts[usuario] > 1
+                                            ? `${usuario} (${occurrence})`
+                                            : usuario;
+                                        if (usuario === username && occurrence === 1) {
+                                            displayName = `${displayName} (vos)`;
+                                        }
+
+                                        return <li key={`${usuario}-${occurrence}`}>{displayName}</li>;
+                                    });
+                                })()
+                            ) : (
+                                <p>Cargando usuarios...</p>
+                            )}
+                        </ul>
+                    </div>
+
+
+
+                    <div className={styles.canvasContainer}>
+                        <PizarronCanvas
+                            clearCanvas={clearCanvas}
+                            disabled={!canvasEnabled}
+                            canChangeBackground={canChangeBackground}
+                        />
+                    </div>
+                    <div className={styles.chatContainer}>
+                        <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket} />
+                    </div>
                 </div>
-            )}
-            <div className={styles.flexContainer}>
-            <div className={styles.playersList}>
-                <h4>Usuarios en la sala:</h4>
-                <ul>
-                    {usuariosNombre.length > 0 ? (
-                        usuariosNombre.map((usuario, index) => (
-                            <li key={index}>{usuario}</li>  
-                        ))
-                    ) : (
-                        <p>Cargando usuarios...</p>
-                    )}
-                </ul>
-            </div>
-                <div className={styles.canvasContainer}>
-                    <PizarronCanvas
-                        clearCanvas={clearCanvas}
-                        disabled={!canvasEnabled}
-                        canChangeBackground={canChangeBackground}
-                    />
-                </div>
-                <div className={styles.chatContainer}>
-                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket} />
-                </div>
-            </div>
-            
-        </main>
+
+            </main>
+        </>
     );
 }
