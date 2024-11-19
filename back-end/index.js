@@ -157,6 +157,7 @@ function getPlayersInRoom(roomCode) {
     });
 }
 
+const turnOrder = {};
 
 io.on('connection', (socket) => {
     console.log('Nuevo cliente conectado');
@@ -176,8 +177,17 @@ io.on('connection', (socket) => {
         socket.request.session.username = nombreJugador;
         socket.join(codigoSala);
     
+        const playersInRoom = getPlayersInRoom(codigoSala);
+        const playerTurn = playersInRoom.length;
+        turnOrder[codigoSala] = turnOrder[codigoSala] || {};
+        turnOrder[codigoSala][nombreJugador] = playerTurn;
+
         const players = getPlayersInRoom(codigoSala);
-        io.to(codigoSala).emit('playersInRoom', players); // Emitir lista actualizada
+        io.to(codigoSala).emit('playersInRoom', players);
+
+        socket.emit('turnoAsignado', playerTurn);
+        console.log(`${nombreJugador} se ha unido a la sala ${codigoSala} con turno: ${playerTurn}`);
+        
     });
     socket.on('getPlayersInRoom', (roomCode, callback) => {
         const players = getPlayersInRoom(roomCode); 
@@ -194,7 +204,9 @@ io.on('connection', (socket) => {
         if (roomCode && playerName) {
             console.log(`${playerName} se ha desconectado de la sala ${roomCode}`);
             console.log(getPlayersInRoom(roomCode))
+            delete turnOrder[roomCode][playerName];
             io.to(roomCode).emit('nuevoUsuario', `${playerName} se ha desconectado.`);
+
         }
     });
 });
