@@ -14,6 +14,8 @@ export default function Home() {
     const [clearCanvas, setClearCanvas] = useState(false);
     const [message, setMessage] = useState("");
     const [canvasEnabled, setCanvasEnabled] = useState(false);
+    const [points, setPoints] = useState(0);
+    const [timerActive, setTimerActive] = useState(false);
     const [usoPalabra, setUsoPalabra] = useState(0);
     const [canChangeBackground, setCanChangeBackground] = useState(false);
     const [numJugadores, setNumJugadores] = useState(0);
@@ -94,6 +96,7 @@ export default function Home() {
         setPalabraActual(palabra);
         setCanvasEnabled(true);
         setCanChangeBackground(true);
+        setMessage(""); // Limpiar mensaje al seleccionar nueva palabra
         setUsoPalabra((prev) => prev + 1);
         iniciarTemporizador();
     };
@@ -103,13 +106,15 @@ export default function Home() {
             clearInterval(intervalRef.current);
         }
 
-        setSegundos(60);
-        intervalRef.current = setInterval(() => {
+        setSegundos(45); // Cambié los segundos a 45 en vez de 60
+        setTimerActive(true);
+        const intervalId = setInterval(() => {
             setSegundos((prev) => {
                 if (prev === 1) {
-                    clearInterval(intervalRef.current);
-                    resetGame();
+                    clearInterval(intervalId);
                     setMessage("Se terminó el tiempo!");
+                    setTimerActive(false);
+                    resetGame();
                     return 0;
                 }
                 return prev - 1;
@@ -137,17 +142,12 @@ export default function Home() {
 
     const handleCorrectGuess = (jugador) => {
         setMessage("¡Palabra correcta!");
-
-        // Actualizar puntaje
-        setPuntajes((prevPuntajes) => ({
-            ...prevPuntajes,
-            [jugador]: (prevPuntajes[jugador] || 0) + 500, // Sumar 500 puntos
-        }));
+        setPoints((prevPoints) => prevPoints + 100); // Sumar 100 puntos
 
         resetGame();
         setTimeout(() => {
-            setMessage("");
-        }, 2000);
+            setMessage(""); // Limpiar el mensaje después de 2 segundos
+        }, 1000);
     };
 
     const timerClass = segundos <= 10 ? styles.timerRed : styles.timerBlack;
@@ -163,28 +163,20 @@ export default function Home() {
     return (
         <main className={styles.container}>
             <div className={styles.wordSection}>
-               
                 {palabraActual ? (
                     <>
                         <p className={styles.word}>{palabraActual}</p>
-                        <h3 className={timerClass}>{segundos} segundos</h3>
+                        {timerActive && <h3 className={timerClass}>{segundos} segundos</h3>}
                     </>
                 ) : (
                     <div className={styles.seleccionPalabra}>
-            
-                        {palabrasSeleccionadas.length > 0 ? (
-                            palabrasSeleccionadas.map((palabra, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => manejarSeleccionPalabra(palabra)}
-                                    aria-label={`Seleccionar palabra: ${palabra}`}
-                                >
-                                    {palabra}
-                                </button>
-                            ))
-                        ) : (
-                            <p>Cargando palabras...</p>
-                        )}
+                        <h3>Selecciona una palabra:</h3>
+                        {palabrasSeleccionadas.map((palabra, index) => (
+                            <button key={index} onClick={() => manejarSeleccionPalabra(palabra)}>
+                                {palabra}
+                            </button>
+                        ))}
+                        <h3>Points: {points}</h3>
                     </div>
                 )}
             </div>
@@ -229,6 +221,7 @@ export default function Home() {
                         disabled={!canvasEnabled}
                         canChangeBackground={canChangeBackground}
                     />
+                    <h3>Points: {points}</h3>
                 </div>
 
                 <div className={styles.chatContainer}>

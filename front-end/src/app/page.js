@@ -9,6 +9,7 @@ const GameRoom = () => {
   const [validCodes, setValidCodes] = useState([]);
   const [maxPlayers, setMaxPlayers] = useState('');
 
+
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -36,6 +37,7 @@ const GameRoom = () => {
         });
 
         window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}`; 
+
         setError('');
       } catch (err) {
         console.error('Error guardando nombre:', err);
@@ -48,7 +50,6 @@ const GameRoom = () => {
 
   const handleCreateGame = async (event) => {
     event.preventDefault();
-
     if (validCodes.includes(gameCode)) {
       setError('El código de la sala ya existe. Por favor, elige otro.');
       return;
@@ -61,7 +62,7 @@ const GameRoom = () => {
 
     if (gameCode && maxPlayers && userName.trim()) {
       try {
-        const response = await fetch('http://localhost:4000/crearSala', {
+        await fetch('http://localhost:4000/crearSala', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -82,7 +83,9 @@ const GameRoom = () => {
         setUserName('');
         document.getElementById('createGameModal').close(); 
         setError('');
+
         window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}`; 
+
       } catch (err) {
         setError('Error al crear la sala.');
         console.error('Error:', err);
@@ -90,7 +93,7 @@ const GameRoom = () => {
     } else {
       setError('Por favor, ingrese un código, un número de jugadores y su nombre.');
     }
-  };
+  }
 
   return (
     <div className={styles.container}>
@@ -172,7 +175,9 @@ const GameRoom = () => {
         </form>
         {error && <p className={styles.error}>{error}</p>}
       </dialog>
+
       </div>
+
   );
 };
 

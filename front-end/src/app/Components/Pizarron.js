@@ -13,6 +13,7 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
     const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
     const [backgroundChanged, setBackgroundChanged] = useState(false);
     const [isBackgroundSet, setIsBackgroundSet] = useState(false);
+    const [isFilling, setIsFilling] = useState(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -22,6 +23,13 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         setContext(ctx);
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
+
+        // Establecer fondo blanco
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Cargar el lienzo al inicio si hay algo guardado en localStorage
+        loadCanvas();
     }, []);
 
     useEffect(() => {
@@ -42,16 +50,16 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
     };
 
     const startDrawing = (e) => {
-        if (context && !disabled && isBackgroundSet) {
-            context.beginPath();
-            context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-            setDrawing(true);
-            setCurrentPath([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
-        }
+        if (disabled || !context || !isBackgroundSet) return;
+        context.beginPath();
+        context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+        setDrawing(true);
+        setCurrentPath([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
     };
 
     const draw = (e) => {
         if (!drawing || disabled || !isBackgroundSet) return;
+
         const x = e.nativeEvent.offsetX;
         const y = e.nativeEvent.offsetY;
         smoothDraw(context, x, y);
@@ -95,8 +103,10 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
     const redrawCanvas = (actions) => {
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+
         actions.forEach(({ path, color, lineWidth }) => {
             ctx.beginPath();
             ctx.strokeStyle = color;
@@ -120,6 +130,38 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
     };
 
     const saveCanvas = () => {
+        localStorage.setItem("latestCanvas", JSON.stringify(actions));
+        alert("Lienzo guardado!");
+    };
+
+    const loadCanvas = () => {
+        const savedActions = localStorage.getItem("latestCanvas");
+
+        if (savedActions) {
+            const parsedActions = JSON.parse(savedActions);
+            setActions(parsedActions);
+            redrawCanvas(parsedActions);
+        } else {
+            console.log("No hay datos guardados.");
+        }
+    };
+
+    const basicColors = [
+        "#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FFA500", "#800080", "#FFC0CB", "#FFFFFF"
+    ];
+
+    const hexToRgb = (hex) => {
+        const bigint = parseInt(hex.slice(1), 16);
+        return {
+            r: (bigint >> 16) & 255,
+            g: (bigint >> 8) & 255,
+            b: bigint & 255,
+        };
+    };
+
+    const availableColors = basicColors.filter(color => color !== backgroundColor);
+
+    const downloadCanvasImage = () => {
         const canvas = canvasRef.current;
         const imageData = canvas.toDataURL("image/png");
         const link = document.createElement("a");
@@ -127,12 +169,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         link.download = "pizarron.png";
         link.click();
     };
-
-    const basicColors = [
-        "#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FFA500", "#800080", "#FFC0CB", "#FFFFFF"
-    ];
-
-    const availableColors = basicColors.filter(color => color !== backgroundColor);
 
     return (
         <div className={styles.container}>
@@ -156,6 +192,7 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                 onMouseUp={finishDrawing}
                 onMouseOut={finishDrawing}
                 className={styles.canvas}
+                style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }}
             />
             <div className={styles.controls}>
                 {availableColors.map((color) => (
@@ -195,6 +232,22 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                 >
                     {isEraser ? "Usar lápiz" : "Usar goma"}
                 </button>
+                <button
+                    onClick={() => {
+                        if (!disabled) {
+                            setIsFilling((prev) => {
+                                if (prev) {
+                                    setCurrentColor("#000000");
+                                }
+                                return !prev;
+                            });
+                        }
+                    }}
+                    className={styles.fillButton}
+                    disabled={disabled}
+                >
+                    {isFilling ? "Desactivar Rellenar" : "Activar Rellenar"}
+                </button>
             </div>
             <div className={styles.actionButtons}>
                 <button className={styles.undoButton} onClick={undoDrawing}>
@@ -205,6 +258,12 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                 </button>
                 <button onClick={saveCanvas} className={styles.saveButton}>
                     Guardar
+                </button>
+                <button onClick={loadCanvas} className={styles.loadButton} disabled={disabled}>
+                    Cargar
+                </button>
+                <button onClick={downloadCanvasImage} className={styles.downloadButton} disabled={disabled}>
+                    Descargar Imagen
                 </button>
             </div>
         </div>

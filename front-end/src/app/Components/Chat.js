@@ -69,10 +69,11 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
             let responseMessage = null;
 
             if (normalizedInput === normalizedPalabra) {
-                responseMessage = { text: "palabra correcta", sender: 'bot', className: styles.correctMessage };
+                responseMessage = { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot', className: styles.correctMessage  };
                 onCorrectGuess(username);  // Pasar el nombre del jugador que adivinó correctamente
+
             } else if (isCasi(normalizedInput, normalizedPalabra)) {
-                responseMessage = { text: "casi", sender: 'bot', className: styles.casiMessage };
+                responseMessage = { text: "Casi, sigue intentando.", sender: 'bot', className: styles.casiMessage };
             }
 
             const newMessage = { text: `${username}: ${input}`, sender: 'user' };
@@ -119,6 +120,7 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
                     Enviar
                 </button>
             </form>
+            <h4>Points: {100}</h4>
         </div>
     );
 }
