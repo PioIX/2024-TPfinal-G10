@@ -186,7 +186,7 @@ io.on('connection', (socket) => {
     console.log('Nuevo cliente conectado');
     socket.on('sendMessage', (message) => {
         if (!message || !message.text || !socket.request.session.room) {
-            console.error('Mensaje o sala inválidos', message);
+            console.error('Mensaje o sala inválidos', message, socket.request.session.room);
 
             return;
         }

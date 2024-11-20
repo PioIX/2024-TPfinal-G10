@@ -2,13 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import styles from './Chat.module.css';
 import { useSocket } from "../hooks/useSocket";
 
-export default function Chat({ palabraActual, onCorrectGuess, socket }) {
+export default function Chat({ palabraActual, onCorrectGuess, socket}) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const messageEndRef = useRef(null);
     const [username, setUsername] = useState("");
-    const { socket, isConnected } = useSocket();
- 
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -20,10 +18,18 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
             setUsername("Usuario desconocido"); 
         }
     }, []); 
+
+    useEffect(() => {
+        if (!socket)
+            return;
+
+    },[socket])
+
     useEffect(() => {
         if (!socket) return;
 
         socket.on('receiveMessage', (message) => {
+            console.log('hoka')
             setMessages((prevMessages) => [
                 ...prevMessages,
                 message

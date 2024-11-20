@@ -65,6 +65,8 @@ export default function Home() {
         }
     }, []);
 
+
+
     useEffect(() => {
         const apiUrl = "http://localhost:4000";
         fetch(`${apiUrl}/palabrasObtener`)
@@ -258,7 +260,7 @@ export default function Home() {
                 </div>
 
                 <div className={styles.chatContainer}>
-                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} />
+                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket}/>
                 </div>
             </div>
         </main>
