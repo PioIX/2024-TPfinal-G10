@@ -23,7 +23,10 @@ export default function Home() {
     const [username, setUsername] = useState("");
     const intervalRef = useRef(null);
     const [usuariosNombre, setUsuariosNombre] = useState([]);
-    const [puntajes, setPuntajes] = useState({}); 
+    const [puntajes, setPuntajes] = useState({});
+    const [turno, setTurno] = useState(1); // Estado que mantiene el turno del jugador
+    const [jugadorActual, setJugadorActual] = useState(""); // Jugador que tiene el turno actual
+
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -48,6 +51,7 @@ export default function Home() {
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
         const roomCode = urlParams.get('room');
+        const turnoParam = urlParams.get('turno');  // Extrae el parámetro 'turno'
 
         if (playerName) {
             setUsername(playerName);
@@ -56,7 +60,12 @@ export default function Home() {
         if (roomCode) {
             setRoom(roomCode);
         }
+
+        if (turnoParam) {
+            setTurno(parseInt(turnoParam));  // Asigna el turno al estado
+        }
     }, []);
+
 
     useEffect(() => {
         const apiUrl = "http://localhost:4000";
@@ -92,10 +101,14 @@ export default function Home() {
     };
 
     const manejarSeleccionPalabra = (palabra) => {
+        if (turno !== 1) {
+            // Si no es el turno del jugador, no hace nada
+            return;
+        }
         setPalabraActual(palabra);
         setCanvasEnabled(true);
         setCanChangeBackground(true);
-        setMessage(""); 
+        setMessage("");
         setUsoPalabra((prev) => prev + 1);
         iniciarTemporizador();
     };
@@ -105,7 +118,7 @@ export default function Home() {
             clearInterval(intervalRef.current);
         }
 
-        setSegundos(60); 
+        setSegundos(60);
         setTimerActive(true);
         const intervalId = setInterval(() => {
             setSegundos((prev) => {
@@ -133,6 +146,9 @@ export default function Home() {
         setCanChangeBackground(false);
         setUsoPalabra(0);
 
+        // Cambiar el turno al siguiente jugador
+        setTurno(turno === 1 ? 2 : 1);  // Cambia el turno entre 1 y 2
+
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
@@ -141,11 +157,11 @@ export default function Home() {
 
     const handleCorrectGuess = (jugador) => {
         setMessage("¡Palabra correcta!");
-        setPoints((prevPoints) => prevPoints + 100); 
+        setPoints((prevPoints) => prevPoints + 100);
 
         resetGame();
         setTimeout(() => {
-            setMessage(""); 
+            setMessage("");
         }, 1000);
     };
 
@@ -161,6 +177,8 @@ export default function Home() {
 
     return (
         <main className={styles.container}>
+
+
             <div className={styles.wordSection}>
                 {palabraActual ? (
                     <>
@@ -184,6 +202,13 @@ export default function Home() {
             <div className={styles.flexContainer}>
                 <div className={styles.playersList}>
                     <h4>Usuarios en la sala:</h4>
+                    <div>
+                        {turno === 1 ? (
+                            <h3>Es tu turno, {username}. ¡Dibuja!</h3>
+                        ) : (
+                            <h3>Es el turno de {usuariosNombre[turno - 1]}, espera...</h3>
+                        )}
+                    </div>
                     <ul>
                         {usuariosNombre.length > 0 ? (
                             (() => {
@@ -199,8 +224,8 @@ export default function Home() {
                                         displayName = `${displayName} (vos)`;
                                     }
 
-                                   
-                                    const puntaje = puntajes[usuario] || 0;  
+
+                                    const puntaje = puntajes[usuario] || 0;
                                     return (
                                         <li key={`${usuario}-${occurrence}`}>
                                             {displayName}: {puntaje} puntos
