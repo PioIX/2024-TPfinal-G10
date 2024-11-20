@@ -120,7 +120,7 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
                     Enviar
                 </button>
             </form>
-            <h4>Points: {100}</h4>
         </div>
+    
     );
 }

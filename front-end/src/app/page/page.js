@@ -4,7 +4,6 @@ import PizarronCanvas from "../Components/Pizarron";
 import Chat from "../Components/Chat";
 import styles from "./page.module.css";
 import { useSocket } from "../hooks/useSocket";
-import Head from "next/head";
 
 export default function Home() {
     const [palabras, setPalabras] = useState([]);
@@ -14,29 +13,45 @@ export default function Home() {
     const [clearCanvas, setClearCanvas] = useState(false);
     const [message, setMessage] = useState("");
     const [canvasEnabled, setCanvasEnabled] = useState(false);
-    const [points, setPoints] = useState(0);
+    const [points, setPoints] = useState(0); // Puntos de este jugador
     const [timerActive, setTimerActive] = useState(false);
     const [usoPalabra, setUsoPalabra] = useState(0);
     const [canChangeBackground, setCanChangeBackground] = useState(false);
     const [numJugadores, setNumJugadores] = useState(0);
-    const { socket, isConnected } = useSocket();
+    const { socket } = useSocket();
     const [room, setRoom] = useState("");
     const [username, setUsername] = useState("");
     const intervalRef = useRef(null);
     const [usuariosNombre, setUsuariosNombre] = useState([]);
-    const [puntajes, setPuntajes] = useState({}); // Estado para puntajes
+    const [puntajes, setPuntajes] = useState({});
+    const [alreadyGuessed, setAlreadyGuessed] = useState(false); // Evitar duplicar el conteo
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const room = urlParams.get('room');
+        const room = urlParams.get("room");
         if (socket && room) {
             socket.on("playersInRoom", (players) => {
                 setNumJugadores(players.length);
                 setUsuariosNombre(players);
+
+                // Inicializar puntajes en 0 para todos los usuarios
+                const initialScores = {};
+                players.forEach((player) => {
+                    initialScores[player] = 0;
+                });
+                setPuntajes(initialScores);
             });
-            socket.emit('getPlayersInRoom', room, (players) => {
+
+            socket.emit("getPlayersInRoom", room, (players) => {
                 setNumJugadores(players.length);
                 setUsuariosNombre(players);
+
+                // Inicializar puntajes en 0 para todos los usuarios
+                const initialScores = {};
+                players.forEach((player) => {
+                    initialScores[player] = 0;
+                });
+                setPuntajes(initialScores);
             });
         }
 
@@ -47,8 +62,8 @@ export default function Home() {
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const playerName = urlParams.get('username');
-        const roomCode = urlParams.get('room');
+        const playerName = urlParams.get("username");
+        const roomCode = urlParams.get("room");
 
         if (playerName) {
             setUsername(playerName);
@@ -96,8 +111,9 @@ export default function Home() {
         setPalabraActual(palabra);
         setCanvasEnabled(true);
         setCanChangeBackground(true);
-        setMessage(""); // Limpiar mensaje al seleccionar nueva palabra
+        setMessage("");
         setUsoPalabra((prev) => prev + 1);
+        setAlreadyGuessed(false); // Resetear bloqueo al seleccionar nueva palabra
         iniciarTemporizador();
     };
 
@@ -106,7 +122,7 @@ export default function Home() {
             clearInterval(intervalRef.current);
         }
 
-        setSegundos(45); // Cambié los segundos a 45 en vez de 60
+        setSegundos(45);
         setTimerActive(true);
         const intervalId = setInterval(() => {
             setSegundos((prev) => {
@@ -140,14 +156,26 @@ export default function Home() {
         }
     };
 
-    const handleCorrectGuess = (jugador) => {
-        setMessage("¡Palabra correcta!");
-        setPoints((prevPoints) => prevPoints + 100); // Sumar 100 puntos
+    const handleCorrectGuess = () => {
+        if (alreadyGuessed) return; // Si ya adivinó, no hacer nada
+        setAlreadyGuessed(true); // Evitar duplicaciones
 
+        setPoints((prevPoints) => {
+            const newPoints = prevPoints + 100;
+
+            // Actualizar puntajes globales
+            setPuntajes((prevPuntajes) => ({
+                ...prevPuntajes,
+                [username]: (prevPuntajes[username] || 0) + 100,
+            }));
+
+            return newPoints;
+        });
+
+        setMessage("¡Palabra correcta!");
         resetGame();
-        setTimeout(() => {
-            setMessage(""); // Limpiar el mensaje después de 2 segundos
-        }, 1000);
+
+        setTimeout(() => setMessage(""), 1000);
     };
 
     const timerClass = segundos <= 10 ? styles.timerRed : styles.timerBlack;
@@ -159,6 +187,18 @@ export default function Home() {
             resetGame();
         }
     }, [usoPalabra]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on("updateScores", (newScores) => {
+            setPuntajes(newScores);
+        });
+
+        return () => {
+            socket.off("updateScores");
+        };
+    }, [socket]);
 
     return (
         <main className={styles.container}>
@@ -176,9 +216,11 @@ export default function Home() {
                                 {palabra}
                             </button>
                         ))}
-                        <h3>Points: {points}</h3>
                     </div>
                 )}
+                <div className={styles.pointsContainer}>
+                    <h3>Puntos acumulados: {points}</h3>
+                </div>
             </div>
             {message && <div className={styles.messageBanner}>{message}</div>}
 
@@ -187,28 +229,14 @@ export default function Home() {
                     <h4>Usuarios en la sala:</h4>
                     <ul>
                         {usuariosNombre.length > 0 ? (
-                            (() => {
-                                const nameCounts = {};
-                                const processedNames = {};
-                                return usuariosNombre.map((usuario, index) => {
-                                    processedNames[usuario] = (processedNames[usuario] || 0) + 1;
-                                    const occurrence = processedNames[usuario];
-                                    let displayName = nameCounts[usuario] > 1
-                                        ? `${usuario} (${occurrence})`
-                                        : usuario;
-                                    if (usuario === username && occurrence === 1) {
-                                        displayName = `${displayName} (vos)`;
-                                    }
-
-                                    // Mostrar nombre y puntaje
-                                    const puntaje = puntajes[usuario] || 0;  // Si no tiene puntaje, muestra 0
-                                    return (
-                                        <li key={`${usuario}-${occurrence}`}>
-                                            {displayName}: {puntaje} puntos
-                                        </li>
-                                    );
-                                });
-                            })()
+                            usuariosNombre.map((usuario, index) => {
+                                const puntaje = puntajes[usuario] || 0;
+                                return (
+                                    <li key={index}>
+                                        {usuario === username ? `${usuario} (vos)` : usuario}: {puntaje} puntos
+                                    </li>
+                                );
+                            })
                         ) : (
                             <p>Cargando usuarios...</p>
                         )}
@@ -221,7 +249,6 @@ export default function Home() {
                         disabled={!canvasEnabled}
                         canChangeBackground={canChangeBackground}
                     />
-                    <h3>Points: {points}</h3>
                 </div>
 
                 <div className={styles.chatContainer}>
