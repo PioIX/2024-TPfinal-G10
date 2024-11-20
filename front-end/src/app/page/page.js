@@ -4,7 +4,6 @@ import PizarronCanvas from "../Components/Pizarron";
 import Chat from "../Components/Chat";
 import styles from "./page.module.css";
 import { useSocket } from "../hooks/useSocket";
-import Head from "next/head";
 
 export default function Home() {
     const [palabras, setPalabras] = useState([]);
@@ -24,7 +23,7 @@ export default function Home() {
     const [username, setUsername] = useState("");
     const intervalRef = useRef(null);
     const [usuariosNombre, setUsuariosNombre] = useState([]);
-    const [puntajes, setPuntajes] = useState({}); // Estado para puntajes
+    const [puntajes, setPuntajes] = useState({}); 
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -96,7 +95,7 @@ export default function Home() {
         setPalabraActual(palabra);
         setCanvasEnabled(true);
         setCanChangeBackground(true);
-        setMessage(""); // Limpiar mensaje al seleccionar nueva palabra
+        setMessage(""); 
         setUsoPalabra((prev) => prev + 1);
         iniciarTemporizador();
     };
@@ -106,7 +105,7 @@ export default function Home() {
             clearInterval(intervalRef.current);
         }
 
-        setSegundos(45); // Cambié los segundos a 45 en vez de 60
+        setSegundos(60); 
         setTimerActive(true);
         const intervalId = setInterval(() => {
             setSegundos((prev) => {
@@ -142,11 +141,11 @@ export default function Home() {
 
     const handleCorrectGuess = (jugador) => {
         setMessage("¡Palabra correcta!");
-        setPoints((prevPoints) => prevPoints + 100); // Sumar 100 puntos
+        setPoints((prevPoints) => prevPoints + 100); 
 
         resetGame();
         setTimeout(() => {
-            setMessage(""); // Limpiar el mensaje después de 2 segundos
+            setMessage(""); 
         }, 1000);
     };
 
@@ -200,8 +199,8 @@ export default function Home() {
                                         displayName = `${displayName} (vos)`;
                                     }
 
-                                    // Mostrar nombre y puntaje
-                                    const puntaje = puntajes[usuario] || 0;  // Si no tiene puntaje, muestra 0
+                                   
+                                    const puntaje = puntajes[usuario] || 0;  
                                     return (
                                         <li key={`${usuario}-${occurrence}`}>
                                             {displayName}: {puntaje} puntos

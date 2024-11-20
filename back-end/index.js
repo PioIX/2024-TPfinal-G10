@@ -60,7 +60,7 @@ app.post('/crearSala', async (req, res) => {
 	const { codigo, cantidad_personas } = req.body;
 	try {
 		const results = await db.query(
-			`INSERT INTO salas (codigo, cantidad_personas) VALUES ('${codigo}', ${cantidad_personas})`
+			`INSERT INTO salas (codigo, cantidad_personas, turno) VALUES ('${codigo}', ${cantidad_personas}, 1)`
 		);
 		res.json(results);
 	} catch (err) {
@@ -68,6 +68,29 @@ app.post('/crearSala', async (req, res) => {
 	}
 });
 
+
+
+app.post('/updateTurno', async (req, res) => {
+    const { codigo } = req.body;
+
+    try {
+        const [result] = await db.query('SELECT turno FROM salas WHERE codigo = ?', [codigo]);
+
+        if (result.length === 0) {
+            return res.status(404).send({ error: 'Sala no encontrada' });
+        }
+        let turnoActual = result[0].turno;
+
+
+        let nuevoTurno = turnoActual === 1 ? 2 : 1;
+
+        await db.query('UPDATE salas SET turno = ? WHERE codigo = ?', [nuevoTurno, codigo]);
+
+        res.json({ nuevoTurno });
+    } catch (err) {
+        res.status(500).send({ error: 'Error al actualizar el turno', details: err });
+    }
+});
 
 
 
