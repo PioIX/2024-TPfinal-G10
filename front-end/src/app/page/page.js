@@ -24,8 +24,10 @@ export default function Home() {
     const intervalRef = useRef(null);
     const [usuariosNombre, setUsuariosNombre] = useState([]);
     const [puntajes, setPuntajes] = useState({});
-    const [turno, setTurno] = useState(1); // Estado que mantiene el turno del jugador
-    const [jugadorActual, setJugadorActual] = useState(""); // Jugador que tiene el turno actual
+    const [turno, setTurno] = useState(1); 
+    const [dibujante, setDibujante] = useState(""); 
+    const [jugadorActual, setJugadorActual] = useState(""); 
+    const [turnoParam, setTurnoParam] = useState(new URLSearchParams(window.location.search).get('turno'))
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -34,6 +36,10 @@ export default function Home() {
             socket.on("playersInRoom", (players) => {
                 setNumJugadores(players.length);
                 setUsuariosNombre(players);
+                if (turnoParam == 1)
+                    setDibujante(username)
+                else
+                    setDibujante(players.find((player) => player != username))
             });
             socket.emit('getPlayersInRoom', room, (players) => {
                 setNumJugadores(players.length);
@@ -49,9 +55,8 @@ export default function Home() {
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
-        const roomCode = urlParams.get('room');
-        const turnoParam = urlParams.get('turno');  // Extrae el parámetro 'turno'
-
+        const roomCode = urlParams.get('room'); 
+        
         if (playerName) {
             setUsername(playerName);
         }
@@ -59,13 +64,18 @@ export default function Home() {
         if (roomCode) {
             setRoom(roomCode);
         }
-
-        if (turnoParam) {
-            setTurno(parseInt(turnoParam));  // Asigna el turno al estado
+        /*
+        if (turnoParam == 1) {
+            setDibujante(playerName);  
+        } else {
+            const rival = usuariosNombre.map(usuario => {
+                console.log(usuario);
+            })
+            console.log("Mi rival es: ",rival)
+            setDibujante(rival);
         }
+          */  
     }, []);
-
-
 
     useEffect(() => {
         const apiUrl = "http://localhost:4000";
@@ -101,8 +111,8 @@ export default function Home() {
     };
 
     const manejarSeleccionPalabra = (palabra) => {
-        if (turno !== 1) {
-            // Si no es el turno del jugador, no hace nada
+        if (turno !== turnoParam) {
+        
             return;
         }
         setPalabraActual(palabra);
@@ -139,21 +149,22 @@ export default function Home() {
         setTimeout(() => {
             setClearCanvas(false);
         }, 0);
-
+    
         seleccionarTresPalabras(palabras);
         setPalabraActual("");
         setCanvasEnabled(false);
         setCanChangeBackground(false);
         setUsoPalabra(0);
-
-        // Cambiar el turno al siguiente jugador
-        setTurno(turno === 1 ? 2 : 1);  // Cambia el turno entre 1 y 2
-
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
+        
+        //VERIFICAR!!!!!
+        if (dibujante == username) {
+            setDibujante(players.find((player) => player != username))
+        } else {
+            setDibujante(username);
         }
+        // ---------
     };
+    
 
     const handleCorrectGuess = (jugador) => {
         setMessage("¡Palabra correcta!");
@@ -175,18 +186,11 @@ export default function Home() {
         }
     }, [usoPalabra]);
 
-    const handleChatMessage = (message) => {
-        if (turno !== 1 && message !== "use client") {
-            setMessage("Solo puedes escribir 'use client' mientras no es tu turno.");
-            return;
-        }
-
-        socket.emit('sendMessage', message);
-    };
+    
 
     return (
         <main className={styles.container}>
-
+            <p>{dibujante}</p>
             <div className={styles.wordSection}>
                 {palabraActual ? (
                     <>
@@ -196,7 +200,7 @@ export default function Home() {
                 ) : (
                     <div className={styles.seleccionPalabra}>
                         <h3>Selecciona una palabra:</h3>
-                        {turno === 1 ? (
+                        {dibujante === username ? (
                             palabrasSeleccionadas.map((palabra, index) => (
                                 <button key={index} onClick={() => manejarSeleccionPalabra(palabra)}>
                                     {palabra}
@@ -215,10 +219,10 @@ export default function Home() {
                 <div className={styles.playersList}>
                     <h4>Usuarios en la sala:</h4>
                     <div>
-                        {turno === 1 ? (
+                        {dibujante === username ? (
                             <h3>Es tu turno, {username}. ¡Dibuja!</h3>
                         ) : (
-                            <h3>Es el turno de {usuariosNombre[turno - 1]}, espera...</h3>
+                            <h3>espera...</h3>
                         )}
                     </div>
                     <ul>
@@ -253,14 +257,14 @@ export default function Home() {
                 <div className={styles.canvasContainer}>
                     <PizarronCanvas
                         clearCanvas={clearCanvas}
-                        disabled={turno !== 1}  // Disable canvas if it's not the player's turn to draw
-                        canChangeBackground={turno === 1 && canChangeBackground}
+                        disabled={turno !== turnoParam}  
+                        canChangeBackground={dibujante === username && canChangeBackground}
                     />
                     <h3>Points: {points}</h3>
                 </div>
 
                 <div className={styles.chatContainer}>
-                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket}/>
+                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket} />
                 </div>
             </div>
         </main>

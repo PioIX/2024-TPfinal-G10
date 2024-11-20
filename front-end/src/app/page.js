@@ -36,7 +36,7 @@ const GameRoom = () => {
           body: JSON.stringify({ nombre: userName }),
         });
 
-        window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}&turno=2`; 
+        window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}&turno=`, 2``; 
 
         setError('');
       } catch (err) {
@@ -84,7 +84,7 @@ const GameRoom = () => {
         document.getElementById('createGameModal').close(); 
         setError('');
 
-        window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}&turno=1`; 
+        window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}&turno=`, 1``; 
 
       } catch (err) {
         setError('Error al crear la sala.');
