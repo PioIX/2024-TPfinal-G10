@@ -27,7 +27,6 @@ export default function Home() {
     const [turno, setTurno] = useState(1); // Estado que mantiene el turno del jugador
     const [jugadorActual, setJugadorActual] = useState(""); // Jugador que tiene el turno actual
 
-
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const room = urlParams.get('room');
@@ -65,7 +64,6 @@ export default function Home() {
             setTurno(parseInt(turnoParam));  // Asigna el turno al estado
         }
     }, []);
-
 
     useEffect(() => {
         const apiUrl = "http://localhost:4000";
@@ -175,9 +173,17 @@ export default function Home() {
         }
     }, [usoPalabra]);
 
+    const handleChatMessage = (message) => {
+        if (turno !== 1 && message !== "use client") {
+            setMessage("Solo puedes escribir 'use client' mientras no es tu turno.");
+            return;
+        }
+
+        socket.emit('sendMessage', message);
+    };
+
     return (
         <main className={styles.container}>
-
 
             <div className={styles.wordSection}>
                 {palabraActual ? (
@@ -188,11 +194,15 @@ export default function Home() {
                 ) : (
                     <div className={styles.seleccionPalabra}>
                         <h3>Selecciona una palabra:</h3>
-                        {palabrasSeleccionadas.map((palabra, index) => (
-                            <button key={index} onClick={() => manejarSeleccionPalabra(palabra)}>
-                                {palabra}
-                            </button>
-                        ))}
+                        {turno === 1 ? (
+                            palabrasSeleccionadas.map((palabra, index) => (
+                                <button key={index} onClick={() => manejarSeleccionPalabra(palabra)}>
+                                    {palabra}
+                                </button>
+                            ))
+                        ) : (
+                            <p>Espera tu turno para seleccionar una palabra.</p>
+                        )}
                         <h3>Points: {points}</h3>
                     </div>
                 )}
@@ -224,7 +234,6 @@ export default function Home() {
                                         displayName = `${displayName} (vos)`;
                                     }
 
-
                                     const puntaje = puntajes[usuario] || 0;
                                     return (
                                         <li key={`${usuario}-${occurrence}`}>
@@ -242,14 +251,14 @@ export default function Home() {
                 <div className={styles.canvasContainer}>
                     <PizarronCanvas
                         clearCanvas={clearCanvas}
-                        disabled={!canvasEnabled}
-                        canChangeBackground={canChangeBackground}
+                        disabled={turno !== 1}  // Disable canvas if it's not the player's turn to draw
+                        canChangeBackground={turno === 1 && canChangeBackground}
                     />
                     <h3>Points: {points}</h3>
                 </div>
 
                 <div className={styles.chatContainer}>
-                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} socket={socket} />
+                    <Chat palabraActual={palabraActual} onCorrectGuess={handleCorrectGuess} />
                 </div>
             </div>
         </main>

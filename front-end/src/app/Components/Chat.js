@@ -1,24 +1,25 @@
 import React, { useEffect, useRef, useState } from "react";
 import styles from './Chat.module.css';
+import { useSocket } from "../hooks/useSocket";
 
 export default function Chat({ palabraActual, onCorrectGuess, socket }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const messageEndRef = useRef(null);
-    const [username, setUsername] = useState(""); // Agregado para obtener el nombre desde la URL
+    const [username, setUsername] = useState("");
+    const { socket, isConnected } = useSocket();
+ 
 
     useEffect(() => {
-        // Extraer el username desde los parámetros de la URL
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
         
         if (playerName) {
-            setUsername(playerName); // Establecer el nombre del jugador desde el parámetro URL
+            setUsername(playerName); 
         } else {
-            setUsername("Usuario desconocido"); // Valor por defecto si no se encuentra el nombre
+            setUsername("Usuario desconocido"); 
         }
-    }, []); // Se ejecuta una sola vez cuando el componente se monta
-
+    }, []); 
     useEffect(() => {
         if (!socket) return;
 
@@ -70,7 +71,7 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
 
             if (normalizedInput === normalizedPalabra) {
                 responseMessage = { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot', className: styles.correctMessage  };
-                onCorrectGuess(username);  // Pasar el nombre del jugador que adivinó correctamente
+                onCorrectGuess(username);  
 
             } else if (isCasi(normalizedInput, normalizedPalabra)) {
                 responseMessage = { text: "Casi, sigue intentando.", sender: 'bot', className: styles.casiMessage };
@@ -78,7 +79,7 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
 
             const newMessage = { text: `${username}: ${input}`, sender: 'user' };
 
-            // Emitir mensaje al servidor
+            
             socket.emit('sendMessage', newMessage);
 
             setMessages((prevMessages) => [
