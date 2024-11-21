@@ -198,4 +198,63 @@ io.on('connection', (socket) => {
         }
     });
 });
-//socket
+
+/* io.on('connection', (socket) => {
+    console.log('Nuevo cliente conectado');
+
+    socket.on('guardarDibujo', (data) => {
+        const room = socket.request.session.room;
+        if (room) {
+            socket.to(room).emit('canvasUpdated', data); // Enviar el dibujo al resto de la sala
+        }
+    });
+
+    socket.on('unirseSala', (data) => {
+        const { codigoSala, nombreJugador } = data;
+        socket.request.session.room = codigoSala;
+        socket.join(codigoSala);
+        console.log(`${nombreJugador} se ha unido a la sala ${codigoSala}`);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Un cliente se ha desconectado');
+    });
+});
+io.on('connection', (socket) => {
+    console.log('Nuevo cliente conectado');
+
+    // Manejar la unión a una sala
+    socket.on('unirseSala', ({ codigoSala, nombreJugador }) => {
+        if (!codigoSala) {
+            console.error("El código de la sala es requerido");
+            return;
+        }
+        socket.join(codigoSala); // Unir al socket a la sala
+        socket.request.session.room = codigoSala;
+        socket.request.session.username = nombreJugador;
+
+        console.log(`${nombreJugador} se ha unido a la sala ${codigoSala}`);
+        socket.to(codigoSala).emit('nuevoUsuario', `${nombreJugador} se ha unido a la sala`);
+    });
+
+    // Manejar el evento de guardar dibujo
+    socket.on('guardarDibujo', (data) => {
+        const room = socket.request.session.room;
+        if (!room) {
+            console.error("El usuario no está en ninguna sala");
+            return;
+        }
+        console.log(`Guardando dibujo en la sala ${room}`);
+        socket.to(room).emit('canvasUpdated', data); // Emitir el dibujo al resto de usuarios en la sala
+    });
+
+    // Manejar desconexiones
+    socket.on('disconnect', () => {
+        const roomCode = socket.request.session.room;
+        const playerName = socket.request.session.username;
+        if (roomCode && playerName) {
+            console.log(`${playerName} se ha desconectado de la sala ${roomCode}`);
+            socket.to(roomCode).emit('usuarioDesconectado', `${playerName} se ha desconectado.`);
+        }
+    });
+}); */
