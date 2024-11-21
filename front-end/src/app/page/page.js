@@ -92,6 +92,8 @@ export default function Home() {
             });
     }, []);
 
+    
+
     useEffect(() => {
         if (!socket || !username) return;
 
@@ -100,22 +102,48 @@ export default function Home() {
         }
     }, [socket, username, room]);
 
-    const seleccionarTresPalabras = (data) => {
+    const seleccionarTresPalabras = async (data) => {
+        // Si no hay datos o hay menos de 3 palabras, intentar obtenerlas nuevamente desde la API
         if (!data || data.length < 3) {
-            console.error("No hay suficientes palabras para seleccionar. Datos:", data);
-            console.log(palabras)
-            setPalabrasSeleccionadas([]); // Manejo del error
-            return;
+            console.warn("No hay suficientes palabras para seleccionar. Intentando obtener más...");
+    
+            try {
+                const apiUrl = "http://localhost:4000";
+                const response = await fetch(`${apiUrl}/palabrasObtener`);
+                
+                if (!response.ok) {
+                    throw new Error(`Error al obtener las palabras: ${response.status}`);
+                }
+    
+                const fetchedData = await response.json();
+                
+                if (fetchedData.length < 3) {
+                    console.error("La API no devolvió suficientes palabras.");
+                    setPalabras([]);
+                    setPalabrasSeleccionadas([]);
+                    return;
+                }
+    
+                setPalabras(fetchedData);
+                return seleccionarTresPalabras(fetchedData); // Llamada recursiva con los nuevos datos
+            } catch (error) {
+                console.error("Error al intentar obtener palabras desde la API:", error.message);
+                setPalabras([]);
+                setPalabrasSeleccionadas([]);
+                return;
+            }
         }
-
+    
+        // Seleccionar 3 palabras únicas de los datos disponibles
         const seleccionadas = new Set();
         while (seleccionadas.size < 3) {
-            console.log(palabras)
             const randomIndex = Math.floor(Math.random() * data.length);
             seleccionadas.add(data[randomIndex].palabra);
         }
+    
         setPalabrasSeleccionadas([...seleccionadas]);
     };
+    
 
 
 
@@ -152,6 +180,7 @@ export default function Home() {
     }, [socket, username]);
 
     const manejarSeleccionPalabra = (palabra) => {
+        if (dibujante !== username) return; // Bloquear a usuarios que no son el dibujante
         setPalabraActual(palabra);
         socket.emit('seleccionarPalabra', { room, palabra });
         setCanvasEnabled(true);
@@ -160,8 +189,13 @@ export default function Home() {
         setUsoPalabra((prev) => prev + 1);
         setAlreadyGuessed(false);
         iniciarTemporizador();
-
     };
+    
+    useEffect(() => {
+        console.log("Dibujante actual:", dibujante);
+        console.log("Usuario actual:", username);
+    }, [dibujante, username]);
+    
 
     const iniciarTemporizador = () => {
         if (timerActive) {
