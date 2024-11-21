@@ -135,7 +135,9 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
                     Enviar
                 </button>
             </form>
+
             <h4>Puntos: {points}</h4> 
         </div>
+    
     );
 }

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from './PizarronCanvas.module.css';
+import { useSocket } from "../hooks/useSocket";
 
 export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackground }) {
     const canvasRef = useRef(null);
