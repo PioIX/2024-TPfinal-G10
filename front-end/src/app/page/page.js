@@ -129,7 +129,7 @@ export default function Home() {
     
     useEffect(() => {
         if (dibujante === username) {
-            seleccionarTresPalabras(palabras); // Asegura que se seleccionen palabras para el nuevo dibujante
+            seleccionarTresPalabras(palabras);
         }
     }, [dibujante, palabras, username]);
     
@@ -145,16 +145,17 @@ export default function Home() {
         return () => socket.off("cambiarTurno");
     }, [socket, username]);
     
-    
 
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
+        socket.emit('seleccionarPalabra', { room, palabra });
         setCanvasEnabled(true);
         setCanChangeBackground(true);
         setMessage("");
         setUsoPalabra((prev) => prev + 1);
         setAlreadyGuessed(false); 
         iniciarTemporizador();
+
     };
 
     const iniciarTemporizador = () => {
@@ -170,7 +171,7 @@ export default function Home() {
                     clearInterval(intervalId);
                     setMessage("Se terminó el tiempo!");
                     setTimerActive(false);
-                    finalizarTurno(); // Cambia el turno automáticamente al terminar el tiempo
+                    finalizarTurno(); 
                     return 0;
                 }
                 return prev - 1;
