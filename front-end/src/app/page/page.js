@@ -151,17 +151,6 @@ export default function Home() {
         return () => socket.off("cambiarTurno");
     }, [socket, username]);
     
-    const manejarAdivinanza = (palabraAdivinada) => {
-        // Si la palabra es correcta, detener el cronómetro inmediatamente.
-        if (palabraAdivinada === palabraCorrecta) {
-            setMessage("¡Palabra adivinada correctamente!");
-            setSegundos(0);  // Detenemos el cronómetro inmediatamente.
-            clearInterval(intervalRef.current);  // Limpiar el intervalo.
-            setTimerActive(false);  // Desactivamos el temporizador.
-            finalizarTurno();  // Cambiar el turno de inmediato.
-        }
-    };
-
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
         socket.emit('seleccionarPalabra', { room, palabra });
@@ -187,7 +176,7 @@ export default function Home() {
                 if (prev <= 1) {  // Si llega a 1, detenerlo en 0.
                     clearInterval(intervalId);  // Detener el intervalo cuando llega a 0.
                     setSegundos(0);
-                    setMessage("Se terminó el tiempo!");
+                    
                     setTimerActive(false);
                     finalizarTurno();  // Cambiar el turno cuando se termina el tiempo.
                     return 0;  // Asegurarse de que no vaya a números negativos.
@@ -262,7 +251,6 @@ export default function Home() {
 
     return (
         <main className={styles.container}>
-            <p>{dibujante}</p>
             <div className={styles.wordSection}>
                 {palabraActual ? (
                     <>
@@ -274,14 +262,16 @@ export default function Home() {
                         <h3>Selecciona una palabra:</h3>
                         {dibujante === username ? (
                             palabrasSeleccionadas.map((palabra, index) => (
+                                <div>
+                                
                                 <button key={index} onClick={() => manejarSeleccionPalabra(palabra)}>
                                     {palabra}
                                 </button>
+                                </div>
                             ))
                         ) : (
                             <p>Espera tu turno para seleccionar una palabra.</p>
                         )}
-                        <h3>Points: {points}</h3>
                     </div>
                 )}
             </div>
@@ -290,13 +280,6 @@ export default function Home() {
             <div className={styles.flexContainer}>
                 <div className={styles.playersList}>
                     <h4>Usuarios en la sala:</h4>
-                    <div>
-                        {dibujante === username ? (
-                            <h3>Es tu turno, {username}. ¡Dibuja!</h3>
-                        ) : (
-                            <h3>espera...</h3>
-                        )}
-                    </div>
                     <ul>
                         {usuariosNombre.length > 0 ? (
                             (() => {
@@ -332,7 +315,6 @@ export default function Home() {
                         disabled={dibujante !== username}
                         canChangeBackground={dibujante === username && canChangeBackground}
                     />
-                    <h3>Points: {points}</h3>
                 </div>
 
                 <div className={styles.chatContainer}>
