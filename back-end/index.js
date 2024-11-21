@@ -5,17 +5,14 @@ const session = require('express-session');
 var cors = require('cors');
 const app = express();
 
-
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
-
 
 const LISTEN_PORT = 4000;
 const server = app.listen(LISTEN_PORT, () => {
     console.log(`Servidor NodeJS corriendo en http://localhost:${LISTEN_PORT}/`);
 });
-
 
 const io = require('socket.io')(server, {
     cors: {
@@ -25,7 +22,6 @@ const io = require('socket.io')(server, {
     }
 });
 
-
 const sessionMiddleware = session({
     secret: "ositos",  
     resave: false,
@@ -34,41 +30,64 @@ const sessionMiddleware = session({
 
 app.use(sessionMiddleware);
 
-
 io.use((socket, next) => {
     sessionMiddleware(socket.request, socket.request.res || {}, next);
 });
 
 app.get('/entrarSala', async (req, res) => {
-	try {
-		const results = await db.query('SELECT * FROM salas');
-		res.json(results);
-	} catch (err) {
-		res.status(500).send(err);
-	}
+    try {
+        const results = await db.query('SELECT * FROM salas');
+        res.json(results);
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
 io.on('connection', (socket) => {
     socket.on('unirseSala', (codigoSala) => {
         socket.join(codigoSala);
+        socket.request.session.room = codigoSala;
         socket.to(codigoSala).emit('nuevoUsuario', 'Un nuevo usuario se ha unido a la sala: ' + codigoSala);
+    });
+
+    socket.on('guardarDibujo', (canvasData) => {
+        const room = socket.request.session.room;
+        if (room) {
+            socket.to(room).emit('canvasUpdated', canvasData); // Enviar el dibujo al resto de la sala
+        }
+    });
+
+    socket.on('requestCanvas', ({ room }) => {
+        const clients = io.sockets.adapter.rooms.get(room);
+        if (clients) {
+            // Enviar el canvas al solicitante desde el primer cliente en la sala que tenga el canvas guardado
+            for (let clientId of clients) {
+                const clientSocket = io.sockets.sockets.get(clientId);
+                if (clientSocket && clientSocket.canvasData) {
+                    socket.emit('sendCanvas', { actions: clientSocket.canvasData });
+                    break;
+                }
+            }
+        }
+    });
+
+    socket.on('canvasUpdated', ({ room, actions }) => {
+        socket.to(room).emit('canvasUpdated', { actions });
+        socket.canvasData = actions; // Guardar el canvas en la sesión del socket para compartirlo luego
     });
 });
 
-
 app.post('/crearSala', async (req, res) => { 
-	const { codigo, cantidad_personas } = req.body;
-	try {
-		const results = await db.query(
-			`INSERT INTO salas (codigo, cantidad_personas, turno) VALUES ('${codigo}', ${cantidad_personas}, 1)`
-		);
-		res.json(results);
-	} catch (err) {
-		res.status(500).send(err);
-	}
+    const { codigo, cantidad_personas } = req.body;
+    try {
+        const results = await db.query(
+            `INSERT INTO salas (codigo, cantidad_personas, turno) VALUES ('${codigo}', ${cantidad_personas}, 1)`
+        );
+        res.json(results);
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
-
-
 
 app.post('/updateTurno', async (req, res) => {
     const { codigo } = req.body;
@@ -81,7 +100,6 @@ app.post('/updateTurno', async (req, res) => {
         }
         let turnoActual = result[0].turno;
 
-
         let nuevoTurno = turnoActual === 1 ? 2 : 1;
 
         await db.query('UPDATE salas SET turno = ? WHERE codigo = ?', [nuevoTurno, codigo]);
@@ -92,33 +110,31 @@ app.post('/updateTurno', async (req, res) => {
     }
 });
 
-
-
 app.post('/sendMessage', async (req, res) => {
-	const { chatId, message, sender } = req.body;
+    const { chatId, message, sender } = req.body;
   
-	try {
-	  await pool.query(
-		`INSERT INTO messages (chat_id, message_text, sender, timestamp) 
-		 VALUES ($1, $2, $3, NOW())`,
-		[chatId, message, sender]
-	  );
-	  await pool.query(
-		`UPDATE chats SET message_text = $1 WHERE id = $2`,
-		[message, chatId]
-	  );
-	  res.status(201).send('Mensaje enviado');
-	} catch (error) {
-	  res.status(500).send(error);
-	}
-  });
+    try {
+      await pool.query(
+        `INSERT INTO messages (chat_id, message_text, sender, timestamp) 
+         VALUES ($1, $2, $3, NOW())`,
+        [chatId, message, sender]
+      );
+      await pool.query(
+        `UPDATE chats SET message_text = $1 WHERE id = $2`,
+        [message, chatId]
+      );
+      res.status(201).send('Mensaje enviado');
+    } catch (error) {
+      res.status(500).send(error);
+    }
+});
 
 app.get('/chats', (req, res) => {
-	const { chatId } = req.params;
-	db.query('SELECT * FROM messages WHERE chat_id = ?', [chatId], (err, results) => {
-		if (err) return res.status(500).send(err);
-		res.json(results);
-	});
+    const { chatId } = req.params;
+    db.query('SELECT * FROM messages WHERE chat_id = ?', [chatId], (err, results) => {
+        if (err) return res.status(500).send(err);
+        res.json(results);
+    });
 });
 
 app.get('/ultimoNombre', async (req, res) => {
@@ -140,26 +156,26 @@ app.get('/palabrasObtener', async (req, res) => {
 });
 
 app.get('/chats/:chatId', (req, res) => {
-	const { chatId } = req.params;
-	db.query('SELECT * FROM messages WHERE chat_id = ?', [chatId], (err, results) => {
-	  if (err) return res.status(500).send(err);
-	  res.json(results);  
-	});
-  });
+    const { chatId } = req.params;
+    db.query('SELECT * FROM messages WHERE chat_id = ?', [chatId], (err, results) => {
+      if (err) return res.status(500).send(err);
+      res.json(results);  
+    });
+});
 
 app.post('/chats', (req, res) => {
-	const { chatId, sender, text } = req.body;
-	db.query(
-	  'INSERT INTO messages (chat_id, sender, text) VALUES (?, ?, ?)',
-	  [chatId, sender, text],
-	  (err, results) => {
-		if (err) {
-		  return res.status(500).send(err);
-		}
-		res.status(201).json({ id: results.insertId, chatId, sender, text });
-	  }
-	);
-  });
+    const { chatId, sender, text } = req.body;
+    db.query(
+      'INSERT INTO messages (chat_id, sender, text) VALUES (?, ?, ?)',
+      [chatId, sender, text],
+      (err, results) => {
+        if (err) {
+          return res.status(500).send(err);
+        }
+        res.status(201).json({ id: results.insertId, chatId, sender, text });
+      }
+    );
+});
 
 app.post('/cualquierCosa', async (req, res) => {
     const phoneNumber = req.body.number;
@@ -180,13 +196,12 @@ function getPlayersInRoom(roomCode) {
     });
 }
 const manejarAdivinanza = (palabraAdivinada) => {
-    // Si la palabra es correcta, detener el cronómetro inmediatamente.
     if (palabraAdivinada === palabraCorrecta) {
         setMessage("¡Palabra adivinada correctamente!");
-        setSegundos(0);  // Detenemos el cronómetro inmediatamente.
-        clearInterval(intervalRef.current);  // Limpiar el intervalo.
-        setTimerActive(false);  // Desactivamos el temporizador.
-        finalizarTurno();  // Cambiar el turno de inmediato.
+        setSegundos(0);
+        clearInterval(intervalRef.current);
+        setTimerActive(false);
+        finalizarTurno();
     }
 };
 const turnOrder = {};
@@ -202,10 +217,8 @@ io.on('connection', (socket) => {
             return;
         }
     
-        
         const textoMensaje = message.text.split(': ')[1] || ''; 
     
-        
         if (textoMensaje.toLowerCase() === palabraActual.toLowerCase()) {
             console.log("Palabra correcta: ", textoMensaje);
             
@@ -281,62 +294,33 @@ io.on('connection', (socket) => {
     });
 });
 
-/* io.on('connection', (socket) => {
-    console.log('Nuevo cliente conectado');
 
-    socket.on('guardarDibujo', (data) => {
-        const room = socket.request.session.room;
-        if (room) {
-            socket.to(room).emit('canvasUpdated', data); // Enviar el dibujo al resto de la sala
-        }
+io.on("connection", (socket) => {
+    console.log("Usuario conectado:", socket.id);
+
+    // Unirse a una sala
+    socket.on("joinRoom", (room) => {
+        socket.join(room);
+        console.log(`Usuario ${socket.id} se unió a la sala ${room}`);
     });
 
-    socket.on('unirseSala', (data) => {
-        const { codigoSala, nombreJugador } = data;
-        socket.request.session.room = codigoSala;
-        socket.join(codigoSala);
-        console.log(`${nombreJugador} se ha unido a la sala ${codigoSala}`);
+    // Recibir acciones del lienzo y enviarlas a otros usuarios de la sala
+    socket.on("canvasUpdated", ({ room, actions }) => {
+        socket.to(room).emit("canvasUpdated", { actions });
     });
 
-    socket.on('disconnect', () => {
-        console.log('Un cliente se ha desconectado');
+    // Solicitar el lienzo actual
+    socket.on("requestCanvas", ({ room }) => {
+        console.log(`Solicitud de lienzo para sala: ${room}`);
+        // Solicitar el lienzo al resto de usuarios en la sala
+        socket.to(room).emit("sendCanvas");
+    });
+
+    // Responder con el lienzo actual
+    socket.on("sendCanvas", ({ room, actions }) => {
+        console.log(`Enviando lienzo de sala ${room}`);
+        socket.to(room).emit("canvasUpdated", { actions });
     });
 });
-io.on('connection', (socket) => {
-    console.log('Nuevo cliente conectado');
 
-    // Manejar la unión a una sala
-    socket.on('unirseSala', ({ codigoSala, nombreJugador }) => {
-        if (!codigoSala) {
-            console.error("El código de la sala es requerido");
-            return;
-        }
-        socket.join(codigoSala); // Unir al socket a la sala
-        socket.request.session.room = codigoSala;
-        socket.request.session.username = nombreJugador;
 
-        console.log(`${nombreJugador} se ha unido a la sala ${codigoSala}`);
-        socket.to(codigoSala).emit('nuevoUsuario', `${nombreJugador} se ha unido a la sala`);
-    });
-
-    // Manejar el evento de guardar dibujo
-    socket.on('guardarDibujo', (data) => {
-        const room = socket.request.session.room;
-        if (!room) {
-            console.error("El usuario no está en ninguna sala");
-            return;
-        }
-        console.log(`Guardando dibujo en la sala ${room}`);
-        socket.to(room).emit('canvasUpdated', data); // Emitir el dibujo al resto de usuarios en la sala
-    });
-
-    // Manejar desconexiones
-    socket.on('disconnect', () => {
-        const roomCode = socket.request.session.room;
-        const playerName = socket.request.session.username;
-        if (roomCode && playerName) {
-            console.log(`${playerName} se ha desconectado de la sala ${roomCode}`);
-            socket.to(roomCode).emit('usuarioDesconectado', `${playerName} se ha desconectado.`);
-        }
-    });
-}); */

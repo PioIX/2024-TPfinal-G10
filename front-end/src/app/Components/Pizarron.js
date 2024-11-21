@@ -1,9 +1,11 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from './PizarronCanvas.module.css';
 import { useSocket } from "../hooks/useSocket";
+import axios from 'axios';
 
-export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackground }) {
+export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackground, roomCode, username }) {
     const canvasRef = useRef(null);
+    const { socket } = useSocket(); // Socket integrado
     const [context, setContext] = useState(null);
     const [drawing, setDrawing] = useState(false);
     const [currentColor, setCurrentColor] = useState("black");
@@ -14,7 +16,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
     const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
     const [backgroundChanged, setBackgroundChanged] = useState(false);
     const [isBackgroundSet, setIsBackgroundSet] = useState(false);
-    const [isFilling, setIsFilling] = useState(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -29,9 +30,26 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Cargar el lienzo al inicio si hay algo guardado en localStorage
-        loadCanvas();
-    }, []);
+        // Escuchar actualizaciones desde el servidor
+        if (socket) {
+            socket.on("canvasUpdated", ({ actions: receivedActions }) => {
+                setActions(receivedActions);
+                redrawCanvas(receivedActions);
+            });
+
+            socket.on("receiveCanvas", ({ actions: receivedActions }) => {
+                setActions(receivedActions);
+                redrawCanvas(receivedActions);
+            });
+        }
+
+        return () => {
+            if (socket) {
+                socket.off("canvasUpdated");
+                socket.off("receiveCanvas");
+            }
+        };
+    }, [socket]);
 
     useEffect(() => {
         if (clearCanvas) {
@@ -98,6 +116,9 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
             newActions.pop();
             setActions(newActions);
             redrawCanvas(newActions);
+            if (socket && roomCode) {
+                socket.emit("canvasUpdated", { room: roomCode, actions: newActions }); // Emitir la actualización al servidor con el código de la sala
+            }
         }
     };
 
@@ -128,39 +149,55 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         setBackgroundChanged(false);
+        if (socket && roomCode) {
+            socket.emit("canvasUpdated", { room: roomCode, actions: [] }); // Emitir la limpieza al servidor con el código de la sala
+        }
     };
 
-    const saveCanvas = () => {
-        localStorage.setItem("latestCanvas", JSON.stringify(actions));
-        alert("Lienzo guardado!");
+    const saveCanvas = async () => {
+        const canvasData = JSON.stringify(actions);
+        try {
+            await axios.post('/api/saveCanvas', {
+                username,
+                canvas_data: canvasData
+            });
+            if (socket && roomCode) {
+                socket.emit("canvasUpdated", { room: roomCode, actions }); // Enviar el lienzo guardado al servidor
+            }
+            alert("Lienzo guardado y compartido!");
+        } catch (error) {
+            console.error("Error guardando el lienzo en la base de datos", error);
+        }
     };
 
-    const loadCanvas = () => {
-        const savedActions = localStorage.getItem("latestCanvas");
+    const loadCanvas = async () => {
+        try {
+            const response = await axios.get(`/api/getLatestCanvas?roomCode=${roomCode}`);
+            const savedActions = response.data.canvas_data;
+            if (savedActions) {
+                const parsedActions = JSON.parse(savedActions);
+                setActions(parsedActions);
+                redrawCanvas(parsedActions);
+                if (socket && roomCode) {
+                    socket.emit("receiveCanvas", { room: roomCode, actions: parsedActions }); // Emitir la actualización al servidor con el código de la sala
+                }
+            } else {
+                console.log("No hay datos guardados.");
+            }
+        } catch (error) {
+            console.error("Error cargando el lienzo desde la base de datos", error);
+        }
+    };
 
-        if (savedActions) {
-            const parsedActions = JSON.parse(savedActions);
-            setActions(parsedActions);
-            redrawCanvas(parsedActions);
-        } else {
-            console.log("No hay datos guardados.");
+    const receiveCanvas = () => {
+        if (socket && roomCode) {
+            socket.emit("requestCanvas", { room: roomCode });
         }
     };
 
     const basicColors = [
         "#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FFA500", "#800080", "#FFC0CB", "#FFFFFF"
     ];
-
-    const hexToRgb = (hex) => {
-        const bigint = parseInt(hex.slice(1), 16);
-        return {
-            r: (bigint >> 16) & 255,
-            g: (bigint >> 8) & 255,
-            b: bigint & 255,
-        };
-    };
-
-    const availableColors = basicColors.filter(color => color !== backgroundColor);
 
     const downloadCanvasImage = () => {
         const canvas = canvasRef.current;
@@ -196,7 +233,7 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                 style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }}
             />
             <div className={styles.controls}>
-                {availableColors.map((color) => (
+                {basicColors.filter(color => color !== backgroundColor).map((color) => (
                     <button
                         key={color}
                         onClick={() => {
@@ -221,52 +258,23 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                     onChange={(e) => setLineWidth(e.target.value)}
                     className={styles.rangeInput}
                 />
-                <button
-                    onClick={() => {
-                        setIsEraser(!isEraser);
-                        if (!isEraser) {
-                            setCurrentColor(backgroundColor);
-                        }
-                    }}
-                    className={styles.eraserButton}
-                    style={{ backgroundColor: "white" }}
-                >
-                    {isEraser ? "Usar lápiz" : "Usar goma"}
-                </button>
-                <button
-                    onClick={() => {
-                        if (!disabled) {
-                            setIsFilling((prev) => {
-                                if (prev) {
-                                    setCurrentColor("#000000");
-                                }
-                                return !prev;
-                            });
-                        }
-                    }}
-                    className={styles.fillButton}
-                    disabled={disabled}
-                >
-                    
-                </button>
-            </div>
-            <div className={styles.actionButtons}>
-                <button className={styles.undoButton} onClick={undoDrawing}>
+                <button onClick={undoDrawing} className={styles.undoButton}>
                     Volver
                 </button>
-                <button className={styles.clearButton} onClick={clearDrawing}>
+                <button onClick={clearDrawing} className={styles.clearButton}>
                     Borrar
                 </button>
                 <button onClick={saveCanvas} className={styles.saveButton}>
-                    Guardar
+                    Guardar y compartir
                 </button>
-                <button onClick={loadCanvas} className={styles.loadButton} disabled={disabled}>
-                    Cargar
+                <button onClick={receiveCanvas} className={styles.loadButton}>
+                    Recibir
                 </button>
-                <button onClick={downloadCanvasImage} className={styles.downloadButton} disabled={disabled}>
+                <button onClick={downloadCanvasImage} className={styles.downloadButton}>
                     Descargar Imagen
                 </button>
             </div>
         </div>
     );
 }
+
