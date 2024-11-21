@@ -13,13 +13,28 @@
     min-height: 100px; 
     margin-top: 10px;
 }
-.casiMessage {
-    color: rgb(235, 177, 20);
+.correctMessage {
+    color: #4CAF50; /* Verde para mensajes correctos */
+    background-color: #E8F5E9;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
+    border: 2px solid #4CAF50;
 }
 
-.correctMessage {
-    color: green;
+.casiMessage {
+    color: #FFC107; /* Amarillo para casi correcto */
+    background-color: #FFFDE7;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
+    border: 2px solid #FFC107;
 }
+
 
 .messageList {
     max-height: 500px; 
@@ -30,8 +45,9 @@
 
 .message {
     padding: 10px;
-    border-radius: 5px;
+    border-radius: 5px ;
     margin: 5px 0;
+    color: black;
 }
 
 .userMessage {

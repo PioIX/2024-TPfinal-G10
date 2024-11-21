@@ -83,11 +83,20 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
             let responseMessage = null;
     
             if (normalizedInput === normalizedPalabra) {
-                responseMessage = { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot', className: styles.correctMessage };
-                onCorrectGuess(username);  // Notificar al componente principal sobre la adivinanza correcta
+                responseMessage = { 
+                    text: "¡Palabra correcta! Has ganado 100 puntos.", 
+                    sender: 'bot', 
+                    className: styles.correctMessage 
+                };
+                onCorrectGuess(username); // Notificar al componente principal sobre la adivinanza correcta
             } else if (isCasi(normalizedInput, normalizedPalabra)) {
-                responseMessage = { text: "Casi, sigue intentando.", sender: 'bot', className: styles.casiMessage };
+                responseMessage = { 
+                    text: "Casi, sigue intentando.", 
+                    sender: 'bot', 
+                    className: styles.casiMessage 
+                };
             }
+            
     
             // Crear el mensaje que incluye el nombre de usuario y el mensaje
             const newMessage = { text: `${username}: ${input}`, sender: 'user' };
