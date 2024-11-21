@@ -80,6 +80,7 @@ export default function Home() {
 
     useEffect(() => {
         const apiUrl = "http://localhost:4000";
+        
         fetch(`${apiUrl}/palabrasObtener`)
             .then((response) => response.json())
             .then((data) => {
@@ -101,18 +102,23 @@ export default function Home() {
 
     const seleccionarTresPalabras = (data) => {
         if (!data || data.length < 3) {
-            console.error("No hay suficientes palabras para seleccionar.");
-            setPalabrasSeleccionadas([]);
+            console.error("No hay suficientes palabras para seleccionar. Datos:", data);
+            console.log(palabras)
+            setPalabrasSeleccionadas([]); // Manejo del error
             return;
         }
-
+    
         const seleccionadas = new Set();
         while (seleccionadas.size < 3) {
+            console.log(palabras)
             const randomIndex = Math.floor(Math.random() * data.length);
             seleccionadas.add(data[randomIndex].palabra);
         }
         setPalabrasSeleccionadas([...seleccionadas]);
     };
+    
+    
+    
 
     const finalizarTurno = () => {
         if (intervalRef.current) {
