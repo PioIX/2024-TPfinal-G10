@@ -116,7 +116,7 @@ export default function Home() {
 
     const finalizarTurno = () => {
         if (intervalRef.current) {
-            clearInterval(intervalRef.current);
+            clearInterval(intervalRef.current);  // Limpiar el intervalo si aún está activo.
             setTimerActive(false);
         }
     
@@ -124,7 +124,7 @@ export default function Home() {
         const nextIndex = (currentIndex + 1) % usuariosNombre.length;
         const siguienteDibujante = usuariosNombre[nextIndex];
     
-        socket.emit("cambiarTurno", { sala: room, nuevoDibujante: siguienteDibujante });
+        socket.emit("cambiarTurno", { sala: room, nuevoDibujante: siguienteDibujante });  // Cambiar turno en el servidor.
     };
     
     useEffect(() => {
@@ -138,13 +138,23 @@ export default function Home() {
     
         socket.on("cambiarTurno", ({ nuevoDibujante }) => {
             setDibujante(nuevoDibujante);
-            setCanvasEnabled(nuevoDibujante === username);
-            resetGame();
+            setCanvasEnabled(nuevoDibujante === username); // Solo habilitar el canvas al nuevo dibujante
+            resetGame();  // Resetear el juego para el siguiente turno
         });
     
         return () => socket.off("cambiarTurno");
     }, [socket, username]);
     
+    const manejarAdivinanza = (palabraAdivinada) => {
+        // Si la palabra es correcta, detener el cronómetro inmediatamente.
+        if (palabraAdivinada === palabraCorrecta) {
+            setMessage("¡Palabra adivinada correctamente!");
+            setSegundos(0);  // Detenemos el cronómetro inmediatamente.
+            clearInterval(intervalRef.current);  // Limpiar el intervalo.
+            setTimerActive(false);  // Desactivamos el temporizador.
+            finalizarTurno();  // Cambiar el turno de inmediato.
+        }
+    };
 
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
@@ -160,24 +170,27 @@ export default function Home() {
 
     const iniciarTemporizador = () => {
         if (timerActive) {
-            clearInterval(intervalRef.current);
+            clearInterval(intervalRef.current);  // Detener el temporizador anterior si ya está activo.
         }
     
-        setSegundos(15);
+        setSegundos(15);  // Establecer el cronómetro en 15 segundos.
         setTimerActive(true);
+        
         const intervalId = setInterval(() => {
             setSegundos((prev) => {
-                if (prev === 1) {
-                    clearInterval(intervalId);
+                if (prev <= 1) {  // Si llega a 1, detenerlo en 0.
+                    clearInterval(intervalId);  // Detener el intervalo cuando llega a 0.
+                    setSegundos(0);
                     setMessage("Se terminó el tiempo!");
                     setTimerActive(false);
-                    finalizarTurno(); 
-                    return 0;
+                    finalizarTurno();  // Cambiar el turno cuando se termina el tiempo.
+                    return 0;  // Asegurarse de que no vaya a números negativos.
                 }
-                return prev - 1;
+                return prev - 1;  // Restar 1 segundo cada vez.
             });
         }, 1000);
-        intervalRef.current = intervalId;
+    
+        intervalRef.current = intervalId;  // Guardar el ID del intervalo.
     };
     
     useEffect(() => {
@@ -198,6 +211,17 @@ export default function Home() {
         seleccionarTresPalabras(palabras);
         setSegundos(60);
     };
+    useEffect(() => {
+        if (!socket) return;
+    
+        socket.on('reiniciarCronometro', () => {
+            setSegundos(0); // Reiniciar el cronómetro cuando se recibe el evento
+        });
+    
+        return () => {
+            socket.off('reiniciarCronometro');
+        };
+    }, [socket]);
     
 
     const handleCorrectGuess = (jugador) => {
@@ -207,12 +231,15 @@ export default function Home() {
             ...prevPuntajes,
             [jugador]: (prevPuntajes[jugador] || 0) + 100,
         }));
+        
         setMessage("¡Palabra correcta!");
+        setSegundos(0); // Reiniciar el cronómetro a 0 cuando alguien adivina correctamente
         resetGame();
         setTimeout(() => {
             setMessage("");
         }, 1000);
     };
+    
     
 
     const timerClass = segundos <= 10 ? styles.timerRed : styles.timerBlack;

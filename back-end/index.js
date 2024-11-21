@@ -179,7 +179,16 @@ function getPlayersInRoom(roomCode) {
         return io.sockets.sockets.get(socketId).request.session.username;
     });
 }
-
+const manejarAdivinanza = (palabraAdivinada) => {
+    // Si la palabra es correcta, detener el cronómetro inmediatamente.
+    if (palabraAdivinada === palabraCorrecta) {
+        setMessage("¡Palabra adivinada correctamente!");
+        setSegundos(0);  // Detenemos el cronómetro inmediatamente.
+        clearInterval(intervalRef.current);  // Limpiar el intervalo.
+        setTimerActive(false);  // Desactivamos el temporizador.
+        finalizarTurno();  // Cambiar el turno de inmediato.
+    }
+};
 const turnOrder = {};
 let palabraActual = "";  
 let puntos = 0;
@@ -199,14 +208,18 @@ io.on('connection', (socket) => {
         
         if (textoMensaje.toLowerCase() === palabraActual.toLowerCase()) {
             console.log("Palabra correcta: ", textoMensaje);
-          
+            
             socket.emit('receiveMessage', { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot' });
+            io.to(socket.request.session.room).emit('reiniciarCronometro');
         } else {
             console.log("Palabra incorrecta: ", textoMensaje);
             
             socket.emit('receiveMessage', { text: "Casi, sigue intentando.", sender: 'bot' });
         }
         socket.to(socket.request.session.room).emit('receiveMessage', message);
+    });
+    socket.on("palabraAdivinada", (palabraAdivinada) => {
+        manejarAdivinanza(palabraAdivinada);
     });
     
     socket.on('seleccionarPalabra', ({ room, palabra }) => {
@@ -241,7 +254,17 @@ io.on('connection', (socket) => {
         callback(players); 
         io.to(roomCode).emit("playersInRoom", players); 
     });
-    
+    socket.on('finalizarTurno', ({ username }) => {
+        const room = socket.request.session.room;
+        const players = getPlayersInRoom(room);
+        
+        // Encontrar el próximo jugador en la lista de jugadores
+        const currentIndex = players.indexOf(username);
+        const nextIndex = (currentIndex + 1) % players.length;
+        const siguienteJugador = players[nextIndex];
+        
+        io.to(room).emit('cambiarTurno', { nuevoDibujante: siguienteJugador });
+    });
     
 
     socket.on('disconnect', () => {
