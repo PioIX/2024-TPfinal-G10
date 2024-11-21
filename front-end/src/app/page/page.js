@@ -24,10 +24,10 @@ export default function Home() {
     const intervalRef = useRef(null);
     const [usuariosNombre, setUsuariosNombre] = useState([]);
     const [puntajes, setPuntajes] = useState({});
-    const [turno, setTurno] = useState(1); 
-    const [dibujante, setDibujante] = useState(""); 
-    const [jugadorActual, setJugadorActual] = useState(""); 
-    const [alreadyGuessed, setAlreadyGuessed] = useState(false); 
+    const [turno, setTurno] = useState(1);
+    const [dibujante, setDibujante] = useState("");
+    const [jugadorActual, setJugadorActual] = useState("");
+    const [alreadyGuessed, setAlreadyGuessed] = useState(false);
     const [turnoParam, setTurnoParam] = useState(new URLSearchParams(window.location.search).get('turno'))
 
     useEffect(() => {
@@ -56,8 +56,8 @@ export default function Home() {
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
-        const roomCode = urlParams.get('room'); 
-        
+        const roomCode = urlParams.get('room');
+
         if (playerName) {
             setUsername(playerName);
         }
@@ -75,12 +75,12 @@ export default function Home() {
             console.log("Mi rival es: ",rival)
             setDibujante(rival);
         }
-          */  
+          */
     }, []);
 
     useEffect(() => {
         const apiUrl = "http://localhost:4000";
-        
+
         fetch(`${apiUrl}/palabrasObtener`)
             .then((response) => response.json())
             .then((data) => {
@@ -107,7 +107,7 @@ export default function Home() {
             setPalabrasSeleccionadas([]); // Manejo del error
             return;
         }
-    
+
         const seleccionadas = new Set();
         while (seleccionadas.size < 3) {
             console.log(palabras)
@@ -116,41 +116,41 @@ export default function Home() {
         }
         setPalabrasSeleccionadas([...seleccionadas]);
     };
-    
-    
-    
+
+
+
 
     const finalizarTurno = () => {
         if (intervalRef.current) {
             clearInterval(intervalRef.current);  // Limpiar el intervalo si aún está activo.
             setTimerActive(false);
         }
-    
+
         const currentIndex = usuariosNombre.indexOf(dibujante);
         const nextIndex = (currentIndex + 1) % usuariosNombre.length;
         const siguienteDibujante = usuariosNombre[nextIndex];
-    
+
         socket.emit("cambiarTurno", { sala: room, nuevoDibujante: siguienteDibujante });  // Cambiar turno en el servidor.
     };
-    
+
     useEffect(() => {
         if (dibujante === username) {
             seleccionarTresPalabras(palabras);
         }
     }, [dibujante, palabras, username]);
-    
+
     useEffect(() => {
         if (!socket) return;
-    
+
         socket.on("cambiarTurno", ({ nuevoDibujante }) => {
             setDibujante(nuevoDibujante);
             setCanvasEnabled(nuevoDibujante === username); // Solo habilitar el canvas al nuevo dibujante
             resetGame();  // Resetear el juego para el siguiente turno
         });
-    
+
         return () => socket.off("cambiarTurno");
     }, [socket, username]);
-    
+
     const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
         socket.emit('seleccionarPalabra', { room, palabra });
@@ -158,7 +158,7 @@ export default function Home() {
         setCanChangeBackground(true);
         setMessage("");
         setUsoPalabra((prev) => prev + 1);
-        setAlreadyGuessed(false); 
+        setAlreadyGuessed(false);
         iniciarTemporizador();
 
     };
@@ -167,16 +167,16 @@ export default function Home() {
         if (timerActive) {
             clearInterval(intervalRef.current);  // Detener el temporizador anterior si ya está activo.
         }
-    
+
         setSegundos(15);  // Establecer el cronómetro en 15 segundos.
         setTimerActive(true);
-        
+
         const intervalId = setInterval(() => {
             setSegundos((prev) => {
                 if (prev <= 1) {  // Si llega a 1, detenerlo en 0.
                     clearInterval(intervalId);  // Detener el intervalo cuando llega a 0.
                     setSegundos(0);
-                    
+
                     setTimerActive(false);
                     finalizarTurno();  // Cambiar el turno cuando se termina el tiempo.
                     return 0;  // Asegurarse de que no vaya a números negativos.
@@ -184,20 +184,20 @@ export default function Home() {
                 return prev - 1;  // Restar 1 segundo cada vez.
             });
         }, 1000);
-    
+
         intervalRef.current = intervalId;  // Guardar el ID del intervalo.
     };
-    
+
     useEffect(() => {
         console.log("Dibujante actual:", dibujante);
         console.log("Usuarios en la sala:", usuariosNombre);
     }, [dibujante, usuariosNombre]);
 
-    
+
     const resetGame = () => {
         setClearCanvas(true);
         setTimeout(() => setClearCanvas(false), 0);
-    
+
         setPalabraActual("");
         setCanvasEnabled(false);
         setTimerActive(false);
@@ -208,25 +208,25 @@ export default function Home() {
     };
     useEffect(() => {
         if (!socket) return;
-    
+
         socket.on('reiniciarCronometro', () => {
             setSegundos(0); // Reiniciar el cronómetro cuando se recibe el evento
         });
-    
+
         return () => {
             socket.off('reiniciarCronometro');
         };
     }, [socket]);
-    
+
 
     const handleCorrectGuess = (jugador) => {
         if (!jugadorActual || jugadorActual !== jugador) return;
-    
+
         setPuntajes((prevPuntajes) => ({
             ...prevPuntajes,
             [jugador]: (prevPuntajes[jugador] || 0) + 100,
         }));
-        
+
         setMessage("¡Palabra correcta!");
         setSegundos(0); // Reiniciar el cronómetro a 0 cuando alguien adivina correctamente
         resetGame();
@@ -234,8 +234,8 @@ export default function Home() {
             setMessage("");
         }, 1000);
     };
-    
-    
+
+
 
     const timerClass = segundos <= 10 ? styles.timerRed : styles.timerBlack;
 
@@ -247,7 +247,7 @@ export default function Home() {
         }
     }, [usoPalabra]);
 
-    
+
 
     return (
         <main className={styles.container}>
@@ -259,16 +259,23 @@ export default function Home() {
                     </>
                 ) : (
                     <div className={styles.seleccionPalabra}>
-                        <h3>Selecciona una palabra:</h3>
                         {dibujante === username ? (
-                            palabrasSeleccionadas.map((palabra, index) => (
-                                <div>
-                                
-                                <button key={index} onClick={() => manejarSeleccionPalabra(palabra)}>
-                                    {palabra}
-                                </button>
-                                </div>
-                            ))
+                            <h3 className={styles.word2}>Selecciona una palabra:</h3>
+                        ) : (
+                            <h3></h3>
+                        )}
+                        {dibujante === username ? (
+                            palabrasSeleccionadas.length > 0 ? (
+                                palabrasSeleccionadas.map((palabra, index) => (
+                                    <div key={index}>
+                                        <button onClick={() => manejarSeleccionPalabra(palabra)}>
+                                            {palabra}
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <p>No hay palabras disponibles para seleccionar.</p>
+                            )
                         ) : (
                             <p>Espera tu turno para seleccionar una palabra.</p>
                         )}
