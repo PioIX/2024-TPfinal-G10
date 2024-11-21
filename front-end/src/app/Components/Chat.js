@@ -86,7 +86,7 @@ export default function Chat({ palabraActual, onCorrectGuess, socket}) {
             const newMessage = { text: `${username}: ${input}`, sender: 'user' };
 
             
-            socket.emit('sendMessage', newMessage);
+            socket.emit('sendMessage', newMessage, palabraActual);
 
             setMessages((prevMessages) => [
                 ...prevMessages,

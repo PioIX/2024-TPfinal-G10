@@ -27,6 +27,7 @@ export default function Home() {
     const [turno, setTurno] = useState(1); 
     const [dibujante, setDibujante] = useState(""); 
     const [jugadorActual, setJugadorActual] = useState(""); 
+    const [alreadyGuessed, setAlreadyGuessed] = useState(false); 
     const [turnoParam, setTurnoParam] = useState(new URLSearchParams(window.location.search).get('turno'))
 
     useEffect(() => {
@@ -99,35 +100,59 @@ export default function Home() {
     }, [socket, username, room]);
 
     const seleccionarTresPalabras = (data) => {
-        const seleccionadas = [];
-        while (seleccionadas.length < 3) {
-            const randomIndex = Math.floor(Math.random() * data.length);
-            const palabra = data[randomIndex].palabra;
-            if (!seleccionadas.includes(palabra)) {
-                seleccionadas.push(palabra);
-            }
-        }
-        setPalabrasSeleccionadas(seleccionadas);
-    };
-
-    const manejarSeleccionPalabra = (palabra) => {
-        if (turno !== turnoParam) {
-        
+        if (!data || data.length < 3) {
+            console.error("No hay suficientes palabras para seleccionar.");
+            setPalabrasSeleccionadas([]);
             return;
         }
+
+        const seleccionadas = new Set();
+        while (seleccionadas.size < 3) {
+            const randomIndex = Math.floor(Math.random() * data.length);
+            seleccionadas.add(data[randomIndex].palabra);
+        }
+        setPalabrasSeleccionadas([...seleccionadas]);
+    };
+
+    const finalizarTurno = () => {
+        if (!socket) return;
+    
+        const currentIndex = usuariosNombre.indexOf(dibujante);
+        const nextIndex = (currentIndex + 1) % usuariosNombre.length;
+        const siguienteDibujante = usuariosNombre[nextIndex];
+    
+        
+        socket.emit("cambiarTurno", { sala: room, nuevoDibujante: siguienteDibujante });
+    };
+    useEffect(() => {
+        if (!socket) return;
+    
+        socket.on("cambiarTurno", ({ nuevoDibujante }) => {
+            setDibujante(nuevoDibujante);
+            setCanvasEnabled(nuevoDibujante === username);
+            setJugadorActual(nuevoDibujante !== username ? username : "");
+            resetGame();
+        });
+    
+        return () => socket.off("cambiarTurno");
+    }, [socket, username]);
+    
+
+    const manejarSeleccionPalabra = (palabra) => {
         setPalabraActual(palabra);
         setCanvasEnabled(true);
         setCanChangeBackground(true);
         setMessage("");
         setUsoPalabra((prev) => prev + 1);
+        setAlreadyGuessed(false); 
         iniciarTemporizador();
     };
 
     const iniciarTemporizador = () => {
-        if (intervalRef.current) {
+        if (timerActive) {
             clearInterval(intervalRef.current);
         }
-
+    
         setSegundos(60);
         setTimerActive(true);
         const intervalId = setInterval(() => {
@@ -136,45 +161,49 @@ export default function Home() {
                     clearInterval(intervalId);
                     setMessage("Se terminó el tiempo!");
                     setTimerActive(false);
-                    resetGame();
+                    finalizarTurno(); // Cambia el turno automáticamente al terminar el tiempo
                     return 0;
                 }
                 return prev - 1;
             });
         }, 1000);
+        intervalRef.current = intervalId;
     };
+    
+    useEffect(() => {
+        console.log("Dibujante actual:", dibujante);
+        console.log("Usuarios en la sala:", usuariosNombre);
+    }, [dibujante, usuariosNombre]);
 
+    
     const resetGame = () => {
         setClearCanvas(true);
-        setTimeout(() => {
-            setClearCanvas(false);
-        }, 0);
+        setTimeout(() => setClearCanvas(false), 0);
     
-        seleccionarTresPalabras(palabras);
         setPalabraActual("");
         setCanvasEnabled(false);
+        setTimerActive(false);
         setCanChangeBackground(false);
         setUsoPalabra(0);
-        
-        //VERIFICAR!!!!!
-        if (dibujante == username) {
-            setDibujante(players.find((player) => player != username))
-        } else {
-            setDibujante(username);
-        }
-        // ---------
+        seleccionarTresPalabras(palabras);
+        setSegundos(60);
     };
     
 
     const handleCorrectGuess = (jugador) => {
+        if (!jugadorActual || jugadorActual !== jugador) return;
+    
+        setPuntajes((prevPuntajes) => ({
+            ...prevPuntajes,
+            [jugador]: (prevPuntajes[jugador] || 0) + 100,
+        }));
         setMessage("¡Palabra correcta!");
-        setPoints((prevPoints) => prevPoints + 100);
-
         resetGame();
         setTimeout(() => {
             setMessage("");
         }, 1000);
     };
+    
 
     const timerClass = segundos <= 10 ? styles.timerRed : styles.timerBlack;
 
@@ -257,7 +286,7 @@ export default function Home() {
                 <div className={styles.canvasContainer}>
                     <PizarronCanvas
                         clearCanvas={clearCanvas}
-                        disabled={turno !== turnoParam}  
+                        disabled={dibujante !== username}
                         canChangeBackground={dibujante === username && canChangeBackground}
                     />
                     <h3>Points: {points}</h3>
