@@ -115,27 +115,36 @@ export default function Home() {
     };
 
     const finalizarTurno = () => {
-        if (!socket) return;
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            setTimerActive(false);
+        }
     
         const currentIndex = usuariosNombre.indexOf(dibujante);
         const nextIndex = (currentIndex + 1) % usuariosNombre.length;
         const siguienteDibujante = usuariosNombre[nextIndex];
     
-        
         socket.emit("cambiarTurno", { sala: room, nuevoDibujante: siguienteDibujante });
     };
+    
+    useEffect(() => {
+        if (dibujante === username) {
+            seleccionarTresPalabras(palabras); // Asegura que se seleccionen palabras para el nuevo dibujante
+        }
+    }, [dibujante, palabras, username]);
+    
     useEffect(() => {
         if (!socket) return;
     
         socket.on("cambiarTurno", ({ nuevoDibujante }) => {
             setDibujante(nuevoDibujante);
             setCanvasEnabled(nuevoDibujante === username);
-            setJugadorActual(nuevoDibujante !== username ? username : "");
             resetGame();
         });
     
         return () => socket.off("cambiarTurno");
     }, [socket, username]);
+    
     
 
     const manejarSeleccionPalabra = (palabra) => {
@@ -153,7 +162,7 @@ export default function Home() {
             clearInterval(intervalRef.current);
         }
     
-        setSegundos(60);
+        setSegundos(5);
         setTimerActive(true);
         const intervalId = setInterval(() => {
             setSegundos((prev) => {

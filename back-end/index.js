@@ -184,7 +184,7 @@ const turnOrder = {};
 
 io.on('connection', (socket) => {
     console.log('Nuevo cliente conectado');
-    socket.on('sendMessage', (message) => {
+    socket.on('sendMessage', (message, palabraAdiv) => {
         if (!message || !message.text || !socket.request.session.room) {
             console.error('Mensaje o sala inválidos', message, socket.request.session.room);
 
@@ -192,6 +192,9 @@ io.on('connection', (socket) => {
         }
        
         socket.to(socket.request.session.room).emit('receiveMessage', message);
+    });
+    socket.on("cambiarTurno", ({ sala, nuevoDibujante }) => {
+        io.to(sala).emit("cambiarTurno", { nuevoDibujante });
     });
     
     socket.on('unirseSala', (data) => {

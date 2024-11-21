@@ -8,6 +8,7 @@ export default function Chat({ palabraActual, onCorrectGuess, socket}) {
     const messageEndRef = useRef(null);
     const [username, setUsername] = useState("");
 
+    
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
