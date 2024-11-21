@@ -168,7 +168,7 @@ export default function Home() {
             clearInterval(intervalRef.current);  // Detener el temporizador anterior si ya está activo.
         }
 
-        setSegundos(15);  // Establecer el cronómetro en 15 segundos.
+        setSegundos(60);  // Establecer el cronómetro en 15 segundos.
         setTimerActive(true);
 
         const intervalId = setInterval(() => {
