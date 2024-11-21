@@ -181,20 +181,37 @@ function getPlayersInRoom(roomCode) {
 }
 
 const turnOrder = {};
+let palabraActual = "";  
+let puntos = 0;
 
-io.on('connection', (socket) => {
+io.on('connection', (socket) => { 
     console.log('Nuevo cliente conectado');
-    socket.on('sendMessage', (message, palabraActual) => {
+
+    socket.on('sendMessage', (message) => {
         if (!message || !message.text || !socket.request.session.room) {
             console.error('Mensaje o sala inválidos', message, socket.request.session.room);
-
             return;
         }
-       
+    
+        
+        const textoMensaje = message.text.split(': ')[1] || ''; 
+    
+        
+        if (textoMensaje.toLowerCase() === palabraActual.toLowerCase()) {
+            console.log("Palabra correcta: ", textoMensaje);
+          
+            socket.emit('receiveMessage', { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot' });
+        } else {
+            console.log("Palabra incorrecta: ", textoMensaje);
+            
+            socket.emit('receiveMessage', { text: "Casi, sigue intentando.", sender: 'bot' });
+        }
         socket.to(socket.request.session.room).emit('receiveMessage', message);
     });
+    
     socket.on('seleccionarPalabra', ({ room, palabra }) => {
         console.log(`Palabra seleccionada para la sala ${room}: ${palabra}`);
+        palabraActual = palabra;
         io.to(room).emit('palabraActual', palabra); 
     });
     socket.on("cambiarTurno", ({ sala, nuevoDibujante }) => {

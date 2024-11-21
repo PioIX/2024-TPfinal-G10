@@ -163,7 +163,7 @@ export default function Home() {
             clearInterval(intervalRef.current);
         }
     
-        setSegundos(5);
+        setSegundos(15);
         setTimerActive(true);
         const intervalId = setInterval(() => {
             setSegundos((prev) => {
