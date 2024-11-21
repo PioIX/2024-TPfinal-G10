@@ -1,28 +1,39 @@
 import React, { useEffect, useRef, useState } from "react";
 import styles from './Chat.module.css';
+import { useSocket } from "../hooks/useSocket";
 
 export default function Chat({ palabraActual, onCorrectGuess, socket }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const messageEndRef = useRef(null);
-    const [username, setUsername] = useState(""); // Agregado para obtener el nombre desde la URL
+    const [username, setUsername] = useState("");
+    const [points, setPoints] = useState(0); // Puntos del jugador
 
+    // Establecer el nombre del jugador desde la URL
     useEffect(() => {
-        // Extraer el username desde los parámetros de la URL
         const urlParams = new URLSearchParams(window.location.search);
         const playerName = urlParams.get('username');
         
         if (playerName) {
-            setUsername(playerName); // Establecer el nombre del jugador desde el parámetro URL
+            setUsername(playerName); 
         } else {
-            setUsername("Usuario desconocido"); // Valor por defecto si no se encuentra el nombre
+            setUsername("Usuario desconocido"); 
         }
-    }, []); // Se ejecuta una sola vez cuando el componente se monta
+    }, []); 
 
+    // Suscribir al evento 'receiveMessage' para recibir mensajes del servidor
     useEffect(() => {
         if (!socket) return;
 
         socket.on('receiveMessage', (message) => {
+            console.log('Mensaje recibido del servidor:', message);
+            
+            // Si el mensaje incluye "¡Palabra correcta!", se suman los puntos
+            if (message.text.includes("¡Palabra correcta!")) {
+                setPoints(prevPoints => prevPoints + 100); // Actualizar puntos en caso de respuesta correcta
+            }
+            
+            // Agregar el mensaje recibido a la lista de mensajes
             setMessages((prevMessages) => [
                 ...prevMessages,
                 message
@@ -34,6 +45,7 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
         };
     }, [socket]);
 
+    // Función para normalizar el texto (sin acentos y en minúsculas)
     const normalizeString = (str) => {
         return str
             .normalize("NFD")
@@ -41,6 +53,7 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
             .toLowerCase();
     };
 
+    // Verifica si el input está "casi" correcto comparado con la palabra
     const isCasi = (input, actual) => {
         const normalizedInput = normalizeString(input);
         const normalizedActual = normalizeString(actual);
@@ -61,36 +74,38 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
         return false;
     };
 
+    // Enviar mensaje al servidor
     const sendMessage = (e) => {
         e.preventDefault();
         if (input.trim()) {
             const normalizedInput = normalizeString(input.trim());
             const normalizedPalabra = normalizeString(palabraActual);
             let responseMessage = null;
-
+    
             if (normalizedInput === normalizedPalabra) {
-                responseMessage = { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot', className: styles.correctMessage  };
-                onCorrectGuess(username);  // Pasar el nombre del jugador que adivinó correctamente
-
+                responseMessage = { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot', className: styles.correctMessage };
+                onCorrectGuess(username);  // Notificar al componente principal sobre la adivinanza correcta
             } else if (isCasi(normalizedInput, normalizedPalabra)) {
                 responseMessage = { text: "Casi, sigue intentando.", sender: 'bot', className: styles.casiMessage };
             }
-
+    
+            // Crear el mensaje que incluye el nombre de usuario y el mensaje
             const newMessage = { text: `${username}: ${input}`, sender: 'user' };
-
-            // Emitir mensaje al servidor
-            socket.emit('sendMessage', newMessage);
-
+    
+            // Emitir el mensaje al servidor
+            socket.emit('sendMessage', newMessage, palabraActual);  // Enviar el mensaje junto con la palabra actual
+    
             setMessages((prevMessages) => [
                 ...prevMessages,
                 newMessage,
                 responseMessage && responseMessage
             ].filter(Boolean));
-
-            setInput("");
+    
+            setInput("");  // Limpiar el campo de entrada
         }
     };
 
+    // Desplazar el scroll hasta el último mensaje
     useEffect(() => {
         if (messageEndRef.current) {
             messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -120,6 +135,8 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
                     Enviar
                 </button>
             </form>
+
+            <h4>Puntos: {points}</h4> 
         </div>
     
     );

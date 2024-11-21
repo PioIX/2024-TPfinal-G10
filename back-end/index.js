@@ -60,7 +60,7 @@ app.post('/crearSala', async (req, res) => {
 	const { codigo, cantidad_personas } = req.body;
 	try {
 		const results = await db.query(
-			`INSERT INTO salas (codigo, cantidad_personas) VALUES ('${codigo}', ${cantidad_personas})`
+			`INSERT INTO salas (codigo, cantidad_personas, turno) VALUES ('${codigo}', ${cantidad_personas}, 1)`
 		);
 		res.json(results);
 	} catch (err) {
@@ -68,6 +68,29 @@ app.post('/crearSala', async (req, res) => {
 	}
 });
 
+
+
+app.post('/updateTurno', async (req, res) => {
+    const { codigo } = req.body;
+
+    try {
+        const [result] = await db.query('SELECT turno FROM salas WHERE codigo = ?', [codigo]);
+
+        if (result.length === 0) {
+            return res.status(404).send({ error: 'Sala no encontrada' });
+        }
+        let turnoActual = result[0].turno;
+
+
+        let nuevoTurno = turnoActual === 1 ? 2 : 1;
+
+        await db.query('UPDATE salas SET turno = ? WHERE codigo = ?', [nuevoTurno, codigo]);
+
+        res.json({ nuevoTurno });
+    } catch (err) {
+        res.status(500).send({ error: 'Error al actualizar el turno', details: err });
+    }
+});
 
 
 
@@ -156,18 +179,56 @@ function getPlayersInRoom(roomCode) {
         return io.sockets.sockets.get(socketId).request.session.username;
     });
 }
+const manejarAdivinanza = (palabraAdivinada) => {
+    // Si la palabra es correcta, detener el cronómetro inmediatamente.
+    if (palabraAdivinada === palabraCorrecta) {
+        setMessage("¡Palabra adivinada correctamente!");
+        setSegundos(0);  // Detenemos el cronómetro inmediatamente.
+        clearInterval(intervalRef.current);  // Limpiar el intervalo.
+        setTimerActive(false);  // Desactivamos el temporizador.
+        finalizarTurno();  // Cambiar el turno de inmediato.
+    }
+};
+const turnOrder = {};
+let palabraActual = "";  
+let puntos = 0;
 
-
-io.on('connection', (socket) => {
+io.on('connection', (socket) => { 
     console.log('Nuevo cliente conectado');
+
     socket.on('sendMessage', (message) => {
         if (!message || !message.text || !socket.request.session.room) {
-            console.error('Mensaje o sala inválidos', message);
-
+            console.error('Mensaje o sala inválidos', message, socket.request.session.room);
             return;
         }
-       
+    
+        
+        const textoMensaje = message.text.split(': ')[1] || ''; 
+    
+        
+        if (textoMensaje.toLowerCase() === palabraActual.toLowerCase()) {
+            console.log("Palabra correcta: ", textoMensaje);
+            
+            socket.emit('receiveMessage', { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot' });
+            io.to(socket.request.session.room).emit('reiniciarCronometro');
+        } else {
+            console.log("Palabra incorrecta: ", textoMensaje);
+            
+            socket.emit('receiveMessage', { text: "Casi, sigue intentando.", sender: 'bot' });
+        }
         socket.to(socket.request.session.room).emit('receiveMessage', message);
+    });
+    socket.on("palabraAdivinada", (palabraAdivinada) => {
+        manejarAdivinanza(palabraAdivinada);
+    });
+    
+    socket.on('seleccionarPalabra', ({ room, palabra }) => {
+        console.log(`Palabra seleccionada para la sala ${room}: ${palabra}`);
+        palabraActual = palabra;
+        io.to(room).emit('palabraActual', palabra); 
+    });
+    socket.on("cambiarTurno", ({ sala, nuevoDibujante }) => {
+        io.to(sala).emit("cambiarTurno", { nuevoDibujante });
     });
     
     socket.on('unirseSala', (data) => {
@@ -176,15 +237,34 @@ io.on('connection', (socket) => {
         socket.request.session.username = nombreJugador;
         socket.join(codigoSala);
     
+        const playersInRoom = getPlayersInRoom(codigoSala);
+        const playerTurn = playersInRoom.length;
+        turnOrder[codigoSala] = turnOrder[codigoSala] || {};
+        turnOrder[codigoSala][nombreJugador] = playerTurn;
+
         const players = getPlayersInRoom(codigoSala);
-        io.to(codigoSala).emit('playersInRoom', players); // Emitir lista actualizada
+        io.to(codigoSala).emit('playersInRoom', players);
+
+        socket.emit('turnoAsignado', playerTurn);
+        console.log(`${nombreJugador} se ha unido a la sala ${codigoSala} con turno: ${playerTurn}`);
+        
     });
     socket.on('getPlayersInRoom', (roomCode, callback) => {
         const players = getPlayersInRoom(roomCode); 
         callback(players); 
         io.to(roomCode).emit("playersInRoom", players); 
     });
-    
+    socket.on('finalizarTurno', ({ username }) => {
+        const room = socket.request.session.room;
+        const players = getPlayersInRoom(room);
+        
+        // Encontrar el próximo jugador en la lista de jugadores
+        const currentIndex = players.indexOf(username);
+        const nextIndex = (currentIndex + 1) % players.length;
+        const siguienteJugador = players[nextIndex];
+        
+        io.to(room).emit('cambiarTurno', { nuevoDibujante: siguienteJugador });
+    });
     
 
     socket.on('disconnect', () => {
@@ -194,7 +274,9 @@ io.on('connection', (socket) => {
         if (roomCode && playerName) {
             console.log(`${playerName} se ha desconectado de la sala ${roomCode}`);
             console.log(getPlayersInRoom(roomCode))
+            delete turnOrder[roomCode][playerName];
             io.to(roomCode).emit('nuevoUsuario', `${playerName} se ha desconectado.`);
+
         }
     });
 });
