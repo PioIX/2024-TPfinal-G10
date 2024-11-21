@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from './PizarronCanvas.module.css';
-import { useSocket } from "../hooks/useSocket";
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:4000"); // Reemplaza con la URL de tu servidor
 
 export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackground }) {
     const canvasRef = useRef(null);
@@ -29,8 +31,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Cargar el lienzo al inicio si hay algo guardado en localStorage
-        loadCanvas();
     }, []);
 
     useEffect(() => {
@@ -131,8 +131,12 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
     };
 
     const saveCanvas = () => {
+        // Guarda el lienzo en el localStorage
         localStorage.setItem("latestCanvas", JSON.stringify(actions));
         alert("Lienzo guardado!");
+
+        // Enviar el lienzo al servidor para compartirlo con otros usuarios
+        socket.emit("saveCanvas", JSON.stringify(actions));
     };
 
     const loadCanvas = () => {
@@ -147,18 +151,18 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         }
     };
 
+    // Escuchar los eventos de socket para recibir un lienzo de otros usuarios
+    socket.on("receiveCanvas", (canvasData) => {
+        if (canvasData) {
+            const parsedActions = JSON.parse(canvasData);
+            setActions(parsedActions);
+            redrawCanvas(parsedActions);
+        }
+    });
+
     const basicColors = [
         "#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FFA500", "#800080", "#FFC0CB", "#FFFFFF"
     ];
-
-    const hexToRgb = (hex) => {
-        const bigint = parseInt(hex.slice(1), 16);
-        return {
-            r: (bigint >> 16) & 255,
-            g: (bigint >> 8) & 255,
-            b: bigint & 255,
-        };
-    };
 
     const availableColors = basicColors.filter(color => color !== backgroundColor);
 
@@ -247,7 +251,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                     className={styles.fillButton}
                     disabled={disabled}
                 >
-                    
                 </button>
             </div>
             <div className={styles.actionButtons}>
@@ -260,7 +263,7 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                 <button onClick={saveCanvas} className={styles.saveButton}>
                     Guardar
                 </button>
-                <button onClick={loadCanvas} className={styles.loadButton} disabled={disabled}>
+                <button onClick={loadCanvas} className={styles.loadButton}>
                     Cargar
                 </button>
                 <button onClick={downloadCanvasImage} className={styles.downloadButton} disabled={disabled}>
