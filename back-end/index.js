@@ -228,11 +228,6 @@ io.on('connection', (socket) => {
             io.to(room).emit('updateScores', playerScores[room]);
         } else {
             console.log("Palabra incorrecta: ", textoMensaje);
-
-            socket.emit('receiveMessage', { 
-                text: "Casi, sigue intentando.", 
-                sender: 'bot' 
-            });
         }
 
         socket.to(room).emit('receiveMessage', message);

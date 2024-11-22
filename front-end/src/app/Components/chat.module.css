@@ -13,16 +13,7 @@
     min-height: 100px; 
     margin-top: 10px;
 }
-.correctMessage {
-    color: #4CAF50; /* Verde para mensajes correctos */
-    background-color: #E8F5E9;
-    padding: 10px;
-    border-radius: 5px;
-    margin-top: 10px;
-    text-align: center;
-    font-weight: bold;
-    border: 2px solid #4CAF50;
-}
+
 
 .casiMessage {
     color: #FFC107; /* Amarillo para casi correcto */

@@ -84,7 +84,6 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
                 onCorrectGuess(username);
             } else if (isCasi(normalizedInput, normalizedPalabra)) {
                 responseMessage = { 
-                    text: "Casi, sigue intentando.", 
                     sender: 'bot', 
                     className: styles.casiMessage 
                 };
