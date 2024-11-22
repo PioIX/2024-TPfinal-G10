@@ -355,3 +355,28 @@ io.on("connection", (socket) => {
         console.log("Usuario desconectado:", socket.id);
     });
 });
+
+// Estado global para almacenar puntajes
+let puntajes = {};
+
+io.on('connection', (socket) => {
+    console.log('Nuevo cliente conectado');
+
+    // Enviar puntajes actuales al nuevo cliente
+    socket.emit('actualizarPuntajes', puntajes);
+
+    // Escuchar el evento 'sumarPuntos' cuando un usuario adivina correctamente
+    socket.on('sumarPuntos', ({ username, puntos }) => {
+        if (!puntajes[username]) {
+            puntajes[username] = 0;
+        }
+        puntajes[username] += puntos;
+
+        // Emitir los puntajes actualizados a todos los clientes
+        io.emit('actualizarPuntajes', puntajes);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Cliente desconectado');
+    });
+});

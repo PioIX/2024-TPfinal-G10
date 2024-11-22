@@ -253,22 +253,27 @@ export default function Home() {
     }, [socket]);
 
 
-    const handleCorrectGuess = (jugador) => {
-        if (!jugadorActual || jugadorActual !== jugador) return;
+    const handleCorrectGuess = () => {
+        if (alreadyGuessed) return; // Si ya adivinó, no hacer nada
+        setAlreadyGuessed(true); // Evitar duplicaciones
 
-        setPuntajes((prevPuntajes) => ({
-            ...prevPuntajes,
-            [jugador]: (prevPuntajes[jugador] || 0) + 100,
-        }));
+        setPoints((prevPoints) => {
+            const newPoints = prevPoints + 100;
+
+            // Actualizar puntajes globales
+            setPuntajes((prevPuntajes) => ({
+                ...prevPuntajes,
+                [username]: (prevPuntajes[username] || 0) + 100,
+            }));
+
+            return newPoints;
+        });
 
         setMessage("¡Palabra correcta!");
-        setSegundos(0); // Reiniciar el cronómetro a 0 cuando alguien adivina correctamente
         resetGame();
-        setTimeout(() => {
-            setMessage("");
-        }, 1000);
-    };
 
+        setTimeout(() => setMessage(""), 1000);
+    };
 
 
     const timerClass = segundos <= 10 ? styles.timerRed : styles.timerBlack;
