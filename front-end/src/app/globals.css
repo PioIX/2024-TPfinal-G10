@@ -10,7 +10,7 @@
   --background-end-rgb: 28, 34, 40;
   
 }
-/* Personalización global de la barra de desplazamiento */
+
 ::-webkit-scrollbar {
   width: 20px;
   height: 20px;

@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import styles from './PizarronCanvas.module.css';
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:4000"); // Reemplaza con la URL de tu servidor
+const socket = io("http://localhost:4000"); 
 
 export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackground }) {
     const canvasRef = useRef(null);
@@ -19,6 +19,18 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
     const [isFilling, setIsFilling] = useState(false);
 
     useEffect(() => {
+        if (!socket) return;
+        socket.on("clearCanvas", () => {
+            console.log("Turno terminado. Limpiando el lienzo...");
+            clearDrawing(); 
+        });
+    
+        return () => {
+            socket.off("clearCanvas");
+        };
+    }, []);
+    
+    useEffect(() => {
         const canvas = canvasRef.current;
         canvas.width = 900;
         canvas.height = 500;
@@ -26,8 +38,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         setContext(ctx);
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
-
-        // Establecer fondo blanco
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -44,7 +54,7 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
             if (!disabled) {
                 saveCanvas();
             }
-        }, 250); // Cada 2 segundos
+        }, 250); 
 
         return () => clearInterval(interval);
     }, [actions, disabled]);
@@ -118,7 +128,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     
-        // Asegúrate de que actions sea un arreglo
         (actions || []).forEach(({ path, color, lineWidth }) => {
             ctx.beginPath();
             ctx.strokeStyle = color;
@@ -142,7 +151,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         setBackgroundChanged(false);
     };
 
-    // Dentro de saveCanvas, se incluye el backgroundColor al enviar por socket
 const saveCanvas = () => {
     const canvasData = {
         actions,
@@ -151,15 +159,14 @@ const saveCanvas = () => {
     socket.emit("saveCanvas", JSON.stringify(canvasData));
 };
 
-// Modificación de la función para recibir datos del lienzo por socket
 socket.on("receiveCanvas", (canvasData) => {
     if (canvasData) {
         const parsedData = JSON.parse(canvasData);
         const { actions: receivedActions, backgroundColor: receivedBackgroundColor } = parsedData;
 
         setActions(receivedActions);
-        setBackgroundColor(receivedBackgroundColor); // Actualiza el fondo
-        redrawCanvas(receivedActions); // Redibuja con el nuevo fondo
+        setBackgroundColor(receivedBackgroundColor); 
+        redrawCanvas(receivedActions); 
     }
 });
 

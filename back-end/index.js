@@ -180,23 +180,22 @@ function getPlayersInRoom(roomCode) {
     });
 }
 const manejarAdivinanza = (palabraAdivinada) => {
-    // Si la palabra es correcta, detener el cronómetro inmediatamente.
+
     if (palabraAdivinada === palabraCorrecta) {
         setMessage("¡Palabra adivinada correctamente!");
-        setSegundos(0);  // Detenemos el cronómetro inmediatamente.
-        clearInterval(intervalRef.current);  // Limpiar el intervalo.
-        setTimerActive(false);  // Desactivamos el temporizador.
-        finalizarTurno();  // Cambiar el turno de inmediato.
+        setSegundos(0); 
+        clearInterval(intervalRef.current);  
+        setTimerActive(false);  
+        finalizarTurno(); 
     }
 };
 const turnOrder = {};
 let palabraActual = "";  
-const playerScores = {}; // Estructura: { sala1: { jugador1: 100, jugador2: 50 }, sala2: { ... } }
+const playerScores = {}; 
 
 io.on('connection', (socket) => { 
     console.log('Nuevo cliente conectado:', socket.id);
 
-    // Evento para manejar mensajes
     socket.on('sendMessage', (message) => {
         if (!message || !message.text || !socket.request.session.room) {
             console.error('Mensaje o sala inválidos', message, socket.request.session.room);
@@ -211,22 +210,21 @@ io.on('connection', (socket) => {
         if (textoMensaje.toLowerCase() === palabraActual.toLowerCase()) {
             console.log("Palabra correcta: ", textoMensaje);
             
-            // Incrementar puntos del jugador
+          
             if (!playerScores[room]) playerScores[room] = {};
             if (!playerScores[room][playerName]) playerScores[room][playerName] = 0;
 
             playerScores[room][playerName] += 100;
 
-            // Emitir mensaje al jugador que acertó
+          
             socket.emit('receiveMessage', { 
                 text: `¡Palabra correcta! Has ganado 100 puntos. Total: ${playerScores[room][playerName]} puntos.`,
                 sender: 'bot' 
             });
 
-            // Reiniciar el cronómetro y avisar a la sala
+           
             io.to(room).emit('reiniciarCronometro');
 
-            // Enviar puntajes actualizados a todos en la sala
             io.to(room).emit('updateScores', playerScores[room]);
         } else {
             console.log("Palabra incorrecta: ", textoMensaje);
@@ -237,11 +235,9 @@ io.on('connection', (socket) => {
             });
         }
 
-        // Reenviar el mensaje al resto de la sala
         socket.to(room).emit('receiveMessage', message);
     });
 
-    // Evento para unirse a una sala
     socket.on('unirseSala', (data) => {
         const { codigoSala, nombreJugador } = data;
 
@@ -254,11 +250,9 @@ io.on('connection', (socket) => {
         socket.request.session.username = nombreJugador;
         socket.join(codigoSala);
 
-        // Inicializar puntaje del jugador en la sala si no existe
         if (!playerScores[codigoSala]) playerScores[codigoSala] = {};
         if (!playerScores[codigoSala][nombreJugador]) playerScores[codigoSala][nombreJugador] = 0;
 
-        // Avisar a la sala sobre el nuevo jugador
         io.to(codigoSala).emit('playersInRoom', Object.keys(playerScores[codigoSala]));
         io.to(codigoSala).emit('updateScores', playerScores[codigoSala]);
 
@@ -275,6 +269,7 @@ io.on('connection', (socket) => {
     });
     socket.on("cambiarTurno", ({ sala, nuevoDibujante }) => {
         io.to(sala).emit("cambiarTurno", { nuevoDibujante });
+        io.emit("clearCanvas");
     });
     
     socket.on('unirseSala', (data) => {
@@ -304,7 +299,6 @@ io.on('connection', (socket) => {
         const room = socket.request.session.room;
         const players = getPlayersInRoom(room);
         
-        // Encontrar el próximo jugador en la lista de jugadores
         const currentIndex = players.indexOf(username);
         const nextIndex = (currentIndex + 1) % players.length;
         const siguienteJugador = players[nextIndex];
@@ -327,73 +321,11 @@ io.on('connection', (socket) => {
     });
 });
 
-/* io.on('connection', (socket) => {
-    console.log('Nuevo cliente conectado');
-
-    socket.on('guardarDibujo', (data) => {
-        const room = socket.request.session.room;
-        if (room) {
-            socket.to(room).emit('canvasUpdated', data); // Enviar el dibujo al resto de la sala
-        }
-    });
-
-    socket.on('unirseSala', (data) => {
-        const { codigoSala, nombreJugador } = data;
-        socket.request.session.room = codigoSala;
-        socket.join(codigoSala);
-        console.log(`${nombreJugador} se ha unido a la sala ${codigoSala}`);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Un cliente se ha desconectado');
-    });
-});
-io.on('connection', (socket) => {
-    console.log('Nuevo cliente conectado');
-
-    // Manejar la unión a una sala
-    socket.on('unirseSala', ({ codigoSala, nombreJugador }) => {
-        if (!codigoSala) {
-            console.error("El código de la sala es requerido");
-            return;
-        }
-        socket.join(codigoSala); // Unir al socket a la sala
-        socket.request.session.room = codigoSala;
-        socket.request.session.username = nombreJugador;
-
-        console.log(`${nombreJugador} se ha unido a la sala ${codigoSala}`);
-        socket.to(codigoSala).emit('nuevoUsuario', `${nombreJugador} se ha unido a la sala`);
-    });
-
-    // Manejar el evento de guardar dibujo
-    socket.on('guardarDibujo', (data) => {
-        const room = socket.request.session.room;
-        if (!room) {
-            console.error("El usuario no está en ninguna sala");
-            return;
-        }
-        console.log(`Guardando dibujo en la sala ${room}`);
-        socket.to(room).emit('canvasUpdated', data); // Emitir el dibujo al resto de usuarios en la sala
-    });
-
-    // Manejar desconexiones
-    socket.on('disconnect', () => {
-        const roomCode = socket.request.session.room;
-        const playerName = socket.request.session.username;
-        if (roomCode && playerName) {
-            console.log(`${playerName} se ha desconectado de la sala ${roomCode}`);
-            socket.to(roomCode).emit('usuarioDesconectado', `${playerName} se ha desconectado.`);
-        }
-    });
-}); */
-
 
 io.on("connection", (socket) => {
     console.log("Nuevo usuario conectado:", socket.id);
 
-    // Escuchar cuando un usuario guarda el lienzo y retransmitirlo a los demás
     socket.on("saveCanvas", (canvasData) => {
-        // Enviar canvasData (incluye acciones y backgroundColor) a todos los demás clientes
         socket.broadcast.emit("receiveCanvas", canvasData);
     });
     
@@ -403,23 +335,16 @@ io.on("connection", (socket) => {
     });
 });
 
-// Estado global para almacenar puntajes
 let puntajes = {};
 
 io.on('connection', (socket) => {
     console.log('Nuevo cliente conectado');
-
-    // Enviar puntajes actuales al nuevo cliente
     socket.emit('actualizarPuntajes', puntajes);
-
-    // Escuchar el evento 'sumarPuntos' cuando un usuario adivina correctamente
     socket.on('sumarPuntos', ({ username, puntos }) => {
         if (!puntajes[username]) {
             puntajes[username] = 0;
         }
         puntajes[username] += puntos;
-
-        // Emitir los puntajes actualizados a todos los clientes
         io.emit('actualizarPuntajes', puntajes);
     });
 

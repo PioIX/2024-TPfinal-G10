@@ -65,17 +65,6 @@ export default function Home() {
         if (roomCode) {
             setRoom(roomCode);
         }
-        /*
-        if (turnoParam == 1) {
-            setDibujante(playerName);  
-        } else {
-            const rival = usuariosNombre.map(usuario => {
-                console.log(usuario);
-            })
-            console.log("Mi rival es: ",rival)
-            setDibujante(rival);
-        }
-          */
     }, []);
 
     useEffect(() => {
@@ -103,7 +92,6 @@ export default function Home() {
     }, [socket, username, room]);
 
     const seleccionarTresPalabras = async (data) => {
-        // Si no hay datos o hay menos de 3 palabras, intentar obtenerlas nuevamente desde la API
         if (!data || data.length < 3) {
             console.warn("No hay suficientes palabras para seleccionar. Intentando obtener más...");
 
@@ -125,7 +113,7 @@ export default function Home() {
                 }
 
                 setPalabras(fetchedData);
-                return seleccionarTresPalabras(fetchedData); // Llamada recursiva con los nuevos datos
+                return seleccionarTresPalabras(fetchedData);
             } catch (error) {
                 console.error("Error al intentar obtener palabras desde la API:", error.message);
                 setPalabras([]);
@@ -134,7 +122,6 @@ export default function Home() {
             }
         }
 
-        // Seleccionar 3 palabras únicas de los datos disponibles
         const seleccionadas = new Set();
         while (seleccionadas.size < 3) {
             const randomIndex = Math.floor(Math.random() * data.length);
@@ -150,7 +137,7 @@ export default function Home() {
 
     const finalizarTurno = () => {
         if (intervalRef.current) {
-            clearInterval(intervalRef.current);  // Limpiar el intervalo si aún está activo.
+            clearInterval(intervalRef.current);  
             setTimerActive(false);
         }
 
@@ -158,16 +145,15 @@ export default function Home() {
         const nextIndex = (currentIndex + 1) % usuariosNombre.length;
         const siguienteDibujante = usuariosNombre[nextIndex];
 
-        socket.emit("cambiarTurno", { sala: room, nuevoDibujante: siguienteDibujante });  // Cambiar turno en el servidor.
+        socket.emit("cambiarTurno", { sala: room, nuevoDibujante: siguienteDibujante });  
     };
 
     useEffect(() => {
         if (!socket) return;
 
-        // Escuchar actualizaciones de puntajes desde el servidor
         socket.on('updateScores', (scores) => {
             console.log('Puntajes actualizados:', scores);
-            setPuntajes(scores); // Actualizar estado local con los puntajes recibidos
+            setPuntajes(scores); 
         });
 
         return () => socket.off('updateScores');
@@ -184,15 +170,15 @@ export default function Home() {
 
         socket.on("cambiarTurno", ({ nuevoDibujante }) => {
             setDibujante(nuevoDibujante);
-            setCanvasEnabled(nuevoDibujante === username); // Solo habilitar el canvas al nuevo dibujante
-            resetGame();  // Resetear el juego para el siguiente turno
+            setCanvasEnabled(nuevoDibujante === username); 
+            resetGame(); 
         });
 
         return () => socket.off("cambiarTurno");
     }, [socket, username]);
 
     const manejarSeleccionPalabra = (palabra) => {
-        if (dibujante !== username) return; // Bloquear a usuarios que no son el dibujante
+        if (dibujante !== username) return;
         setPalabraActual(palabra);
         socket.emit('seleccionarPalabra', { room, palabra });
         setCanvasEnabled(true);
@@ -211,27 +197,27 @@ export default function Home() {
 
     const iniciarTemporizador = () => {
         if (timerActive) {
-            clearInterval(intervalRef.current);  // Detener el temporizador anterior si ya está activo.
+            clearInterval(intervalRef.current);  
         }
 
-        setSegundos(60);  // Establecer el cronómetro en 15 segundos.
+        setSegundos(60); 
         setTimerActive(true);
 
         const intervalId = setInterval(() => {
             setSegundos((prev) => {
-                if (prev <= 1) {  // Si llega a 1, detenerlo en 0.
-                    clearInterval(intervalId);  // Detener el intervalo cuando llega a 0.
+                if (prev <= 1) {  
+                    clearInterval(intervalId);  
                     setSegundos(0);
 
                     setTimerActive(false);
-                    finalizarTurno();  // Cambiar el turno cuando se termina el tiempo.
-                    return 0;  // Asegurarse de que no vaya a números negativos.
+                    finalizarTurno();  
+                    return 0;  
                 }
-                return prev - 1;  // Restar 1 segundo cada vez.
+                return prev - 1;  
             });
         }, 1000);
 
-        intervalRef.current = intervalId;  // Guardar el ID del intervalo.
+        intervalRef.current = intervalId; 
     };
 
     useEffect(() => {
@@ -256,7 +242,7 @@ export default function Home() {
         if (!socket) return;
 
         socket.on('reiniciarCronometro', () => {
-            setSegundos(0); // Reiniciar el cronómetro cuando se recibe el evento
+            setSegundos(0);
         });
 
         return () => {
@@ -266,13 +252,12 @@ export default function Home() {
 
 
     const handleCorrectGuess = () => {
-        if (alreadyGuessed) return; // Si ya adivinó, no hacer nada
-        setAlreadyGuessed(true); // Evitar duplicaciones
+        if (alreadyGuessed) return; 
+        setAlreadyGuessed(true); 
 
         setPoints((prevPoints) => {
             const newPoints = prevPoints + 100;
 
-            // Actualizar puntajes globales
             setPuntajes((prevPuntajes) => ({
                 ...prevPuntajes,
                 [username]: (prevPuntajes[username] || 0) + 100,
@@ -341,10 +326,8 @@ export default function Home() {
                     <ul>
                         {usuariosNombre.length > 0 ? (
                             usuariosNombre.map((usuario, index) => {
-                                // Obtener el puntaje del usuario, o 0 si no tiene puntos todavía
                                 const puntaje = puntajes[usuario] || 0;
 
-                                // Mostrar el nombre del usuario junto con el puntaje
                                 return (
                                     <li key={index}>
                                         {usuario === username ? `${usuario} (vos)` : usuario}: {puntaje} puntos
