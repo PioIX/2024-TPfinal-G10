@@ -44,7 +44,7 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
             if (!disabled) {
                 saveCanvas();
             }
-        }, 2000); // Cada 2 segundos
+        }, 250); // Cada 2 segundos
 
         return () => clearInterval(interval);
     }, [actions, disabled]);
@@ -114,11 +114,12 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
     const redrawCanvas = (actions) => {
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
+    
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
-        actions.forEach(({ path, color, lineWidth }) => {
+    
+        // Asegúrate de que actions sea un arreglo
+        (actions || []).forEach(({ path, color, lineWidth }) => {
             ctx.beginPath();
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
@@ -129,6 +130,7 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
             ctx.stroke();
         });
     };
+    
 
     const clearDrawing = () => {
         setActions([]);
@@ -140,10 +142,27 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         setBackgroundChanged(false);
     };
 
-    const saveCanvas = () => {
-        // Enviar el lienzo al servidor para compartirlo con otros usuarios
-        socket.emit("saveCanvas", JSON.stringify(actions));
+    // Dentro de saveCanvas, se incluye el backgroundColor al enviar por socket
+const saveCanvas = () => {
+    const canvasData = {
+        actions,
+        backgroundColor,
     };
+    socket.emit("saveCanvas", JSON.stringify(canvasData));
+};
+
+// Modificación de la función para recibir datos del lienzo por socket
+socket.on("receiveCanvas", (canvasData) => {
+    if (canvasData) {
+        const parsedData = JSON.parse(canvasData);
+        const { actions: receivedActions, backgroundColor: receivedBackgroundColor } = parsedData;
+
+        setActions(receivedActions);
+        setBackgroundColor(receivedBackgroundColor); // Actualiza el fondo
+        redrawCanvas(receivedActions); // Redibuja con el nuevo fondo
+    }
+});
+
 
     const loadCanvas = () => {
         const savedActions = localStorage.getItem("latestCanvas");
@@ -157,14 +176,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         }
     };
 
-    // Escuchar los eventos de socket para recibir un lienzo de otros usuarios
-    socket.on("receiveCanvas", (canvasData) => {
-        if (canvasData) {
-            const parsedActions = JSON.parse(canvasData);
-            setActions(parsedActions);
-            redrawCanvas(parsedActions);
-        }
-    });
 
     const basicColors = [
         "#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FFA500", "#800080", "#FFC0CB", "#FFFFFF"
@@ -239,8 +250,8 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                         }
                     }}
                     className={styles.eraserButton}
-                    style={{ backgroundColor: "white" }}
                 >
+                    
                     {isEraser ? "Usar lápiz" : "Usar goma"}
                 </button>
             </div>
@@ -251,11 +262,8 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                 <button className={styles.clearButton} onClick={clearDrawing}>
                     Borrar
                 </button>
-                <button onClick={loadCanvas} className={styles.loadButton}>
-                    Cargar
-                </button>
-                <button onClick={downloadCanvasImage} className={styles.downloadButton} disabled={disabled}>
-                    Descargar Imagen
+                <button onClick={downloadCanvasImage} className={styles.saveButton} disabled={disabled}>
+                    Descargar
                 </button>
             </div>
         </div>

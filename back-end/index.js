@@ -393,9 +393,10 @@ io.on("connection", (socket) => {
 
     // Escuchar cuando un usuario guarda el lienzo y retransmitirlo a los demás
     socket.on("saveCanvas", (canvasData) => {
-        // Puedes usar `socket.broadcast.emit` para enviarlo a todos los demás excepto al que envió
+        // Enviar canvasData (incluye acciones y backgroundColor) a todos los demás clientes
         socket.broadcast.emit("receiveCanvas", canvasData);
     });
+    
 
     socket.on("disconnect", () => {
         console.log("Usuario desconectado:", socket.id);

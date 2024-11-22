@@ -123,7 +123,6 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
 
     return (
         <div className={styles.chatContainer}>
-            <h2 className="text-lg font-bold mb-2">Chat</h2>
             <div className={styles.messageList}>
                 {messages.map((msg, index) => (
                     <div key={index} className={`${styles.message} ${msg.sender === 'user' ? styles.userMessage : msg.className}`}>
@@ -144,8 +143,6 @@ export default function Chat({ palabraActual, onCorrectGuess, socket }) {
                     Enviar
                 </button>
             </form>
-
-            <h4>Puntos: {points}</h4> 
         </div>
     
     );
