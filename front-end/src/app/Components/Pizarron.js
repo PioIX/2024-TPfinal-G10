@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import styles from './PizarronCanvas.module.css';
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:4000"); 
+const socket = io("http://10.1.5.150:4000"); 
 
 export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackground }) {
     const canvasRef = useRef(null);

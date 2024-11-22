@@ -13,7 +13,7 @@ const GameRoom = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const response = await fetch('http://localhost:4000/entrarSala');
+        const response = await fetch('http://10.1.5.150:4000/entrarSala');
         const data = await response.json();
         const codes = data.map(room => room.codigo);
         setValidCodes(codes);
@@ -28,7 +28,7 @@ const GameRoom = () => {
     event.preventDefault();
     if (validCodes.includes(gameCode) && userName.trim()) {
       try {
-        await fetch('http://localhost:4000/guardarNombre', {
+        await fetch('http://10.1.5.150:4000/guardarNombre', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ const GameRoom = () => {
           body: JSON.stringify({ nombre: userName }),
         });
 
-        window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}&turno=2`; 
+        window.location.href = `http://10.1.5.150:3000/page?room=${gameCode}&username=${userName}&turno=2`; 
 
         setError('');
       } catch (err) {
@@ -62,7 +62,7 @@ const GameRoom = () => {
 
     if (gameCode && maxPlayers && userName.trim()) {
       try {
-        await fetch('http://localhost:4000/crearSala', {
+        await fetch('http://10.1.5.150:4000/crearSala', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ const GameRoom = () => {
           body: JSON.stringify({ codigo: gameCode, cantidad_personas: parseInt(maxPlayers) }),
         });
 
-        await fetch('http://localhost:4000/guardarNombre', {
+        await fetch('http://10.1.5.150:4000/guardarNombre', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ const GameRoom = () => {
         document.getElementById('createGameModal').close(); 
         setError('');
 
-        window.location.href = `http://localhost:3000/page?room=${gameCode}&username=${userName}&turno=1`; 
+        window.location.href = `http://10.1.5.150:3000/page?room=${gameCode}&username=${userName}&turno=1`; 
 
       } catch (err) {
         setError('Error al crear la sala.');

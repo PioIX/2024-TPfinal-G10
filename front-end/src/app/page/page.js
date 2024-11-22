@@ -68,7 +68,7 @@ export default function Home() {
     }, []);
 
     useEffect(() => {
-        const apiUrl = "http://localhost:4000";
+        const apiUrl = "http://10.1.5.150:4000";
 
         fetch(`${apiUrl}/palabrasObtener`)
             .then((response) => response.json())
@@ -96,7 +96,7 @@ export default function Home() {
             console.warn("No hay suficientes palabras para seleccionar. Intentando obtener más...");
 
             try {
-                const apiUrl = "http://localhost:4000";
+                const apiUrl = "http://10.1.5.150:4000";
                 const response = await fetch(`${apiUrl}/palabrasObtener`);
 
                 if (!response.ok) {
@@ -178,16 +178,18 @@ export default function Home() {
     }, [socket, username]);
 
     const manejarSeleccionPalabra = (palabra) => {
-        if (dibujante !== username) return;
-        setPalabraActual(palabra);
-        socket.emit('seleccionarPalabra', { room, palabra });
-        setCanvasEnabled(true);
-        setCanChangeBackground(true);
-        setMessage("");
-        setUsoPalabra((prev) => prev + 1);
-        setAlreadyGuessed(false);
-        iniciarTemporizador();
+        if (dibujante !== username) return;  // Si no es el dibujante, no permitir hacer nada
+    
+        setPalabraActual(palabra);  // Establecer la palabra seleccionada
+        socket.emit('seleccionarPalabra', { room, palabra });  // Emitir al servidor la palabra seleccionada
+        setCanvasEnabled(true);  // Habilitar el canvas para dibujar
+        setCanChangeBackground(true);  // Permitir cambiar el fondo
+        setMessage("");  // Limpiar mensaje
+        setUsoPalabra((prev) => prev + 1);  // Contador de palabras seleccionadas
+        setAlreadyGuessed(false);  // Reiniciar el estado de "adivinada"
+        iniciarTemporizador();  // Iniciar el temporizador
     };
+    
 
     useEffect(() => {
         console.log("Dibujante actual:", dibujante);
@@ -342,11 +344,11 @@ export default function Home() {
                 </div>
 
                 <div className={styles.canvasContainer}>
-                    <PizarronCanvas
-                        clearCanvas={clearCanvas}
-                        disabled={dibujante !== username}
-                        canChangeBackground={dibujante === username && canChangeBackground}
-                    />
+                <PizarronCanvas
+        clearCanvas={clearCanvas}
+        disabled={dibujante !== username || !palabraActual}  // No permitir dibujar si no hay palabra seleccionada
+        canChangeBackground={dibujante === username && canChangeBackground}
+    />
                 </div>
 
                 <div className={styles.chatContainer}>
