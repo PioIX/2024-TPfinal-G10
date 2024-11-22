@@ -92,7 +92,7 @@ export default function Home() {
             });
     }, []);
 
-    
+
 
     useEffect(() => {
         if (!socket || !username) return;
@@ -106,24 +106,24 @@ export default function Home() {
         // Si no hay datos o hay menos de 3 palabras, intentar obtenerlas nuevamente desde la API
         if (!data || data.length < 3) {
             console.warn("No hay suficientes palabras para seleccionar. Intentando obtener más...");
-    
+
             try {
                 const apiUrl = "http://localhost:4000";
                 const response = await fetch(`${apiUrl}/palabrasObtener`);
-                
+
                 if (!response.ok) {
                     throw new Error(`Error al obtener las palabras: ${response.status}`);
                 }
-    
+
                 const fetchedData = await response.json();
-                
+
                 if (fetchedData.length < 3) {
                     console.error("La API no devolvió suficientes palabras.");
                     setPalabras([]);
                     setPalabrasSeleccionadas([]);
                     return;
                 }
-    
+
                 setPalabras(fetchedData);
                 return seleccionarTresPalabras(fetchedData); // Llamada recursiva con los nuevos datos
             } catch (error) {
@@ -133,17 +133,17 @@ export default function Home() {
                 return;
             }
         }
-    
+
         // Seleccionar 3 palabras únicas de los datos disponibles
         const seleccionadas = new Set();
         while (seleccionadas.size < 3) {
             const randomIndex = Math.floor(Math.random() * data.length);
             seleccionadas.add(data[randomIndex].palabra);
         }
-    
+
         setPalabrasSeleccionadas([...seleccionadas]);
     };
-    
+
 
 
 
@@ -160,6 +160,18 @@ export default function Home() {
 
         socket.emit("cambiarTurno", { sala: room, nuevoDibujante: siguienteDibujante });  // Cambiar turno en el servidor.
     };
+
+    useEffect(() => {
+        if (!socket) return;
+
+        // Escuchar actualizaciones de puntajes desde el servidor
+        socket.on('updateScores', (scores) => {
+            console.log('Puntajes actualizados:', scores);
+            setPuntajes(scores); // Actualizar estado local con los puntajes recibidos
+        });
+
+        return () => socket.off('updateScores');
+    }, [socket]);
 
     useEffect(() => {
         if (dibujante === username) {
@@ -190,12 +202,12 @@ export default function Home() {
         setAlreadyGuessed(false);
         iniciarTemporizador();
     };
-    
+
     useEffect(() => {
         console.log("Dibujante actual:", dibujante);
         console.log("Usuario actual:", username);
     }, [dibujante, username]);
-    
+
 
     const iniciarTemporizador = () => {
         if (timerActive) {
@@ -323,31 +335,22 @@ export default function Home() {
                     <h4>Usuarios en la sala:</h4>
                     <ul>
                         {usuariosNombre.length > 0 ? (
-                            (() => {
-                                const nameCounts = {};
-                                const processedNames = {};
-                                return usuariosNombre.map((usuario, index) => {
-                                    processedNames[usuario] = (processedNames[usuario] || 0) + 1;
-                                    const occurrence = processedNames[usuario];
-                                    let displayName = nameCounts[usuario] > 1
-                                        ? `${usuario} (${occurrence})`
-                                        : usuario;
-                                    if (usuario === username && occurrence === 1) {
-                                        displayName = `${displayName} (vos)`;
-                                    }
+                            usuariosNombre.map((usuario, index) => {
+                                // Obtener el puntaje del usuario, o 0 si no tiene puntos todavía
+                                const puntaje = puntajes[usuario] || 0;
 
-                                    const puntaje = puntajes[usuario] || 0;
-                                    return (
-                                        <li key={`${usuario}-${occurrence}`}>
-                                            {displayName}: {puntaje} puntos
-                                        </li>
-                                    );
-                                });
-                            })()
+                                // Mostrar el nombre del usuario junto con el puntaje
+                                return (
+                                    <li key={index}>
+                                        {usuario === username ? `${usuario} (vos)` : usuario}: {puntaje} puntos
+                                    </li>
+                                );
+                            })
                         ) : (
                             <p>Cargando usuarios...</p>
                         )}
                     </ul>
+
                 </div>
 
                 <div className={styles.canvasContainer}>

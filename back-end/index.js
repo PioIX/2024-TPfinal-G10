@@ -191,32 +191,78 @@ const manejarAdivinanza = (palabraAdivinada) => {
 };
 const turnOrder = {};
 let palabraActual = "";  
-let puntos = 0;
+const playerScores = {}; // Estructura: { sala1: { jugador1: 100, jugador2: 50 }, sala2: { ... } }
 
 io.on('connection', (socket) => { 
-    console.log('Nuevo cliente conectado');
+    console.log('Nuevo cliente conectado:', socket.id);
 
+    // Evento para manejar mensajes
     socket.on('sendMessage', (message) => {
         if (!message || !message.text || !socket.request.session.room) {
             console.error('Mensaje o sala inválidos', message, socket.request.session.room);
             return;
         }
-    
-        
+
+        const room = socket.request.session.room;
+        const playerName = socket.request.session.username;
+
         const textoMensaje = message.text.split(': ')[1] || ''; 
-    
         
         if (textoMensaje.toLowerCase() === palabraActual.toLowerCase()) {
             console.log("Palabra correcta: ", textoMensaje);
             
-            socket.emit('receiveMessage', { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot' });
-            io.to(socket.request.session.room).emit('reiniciarCronometro');
+            // Incrementar puntos del jugador
+            if (!playerScores[room]) playerScores[room] = {};
+            if (!playerScores[room][playerName]) playerScores[room][playerName] = 0;
+
+            playerScores[room][playerName] += 100;
+
+            // Emitir mensaje al jugador que acertó
+            socket.emit('receiveMessage', { 
+                text: `¡Palabra correcta! Has ganado 100 puntos. Total: ${playerScores[room][playerName]} puntos.`,
+                sender: 'bot' 
+            });
+
+            // Reiniciar el cronómetro y avisar a la sala
+            io.to(room).emit('reiniciarCronometro');
+
+            // Enviar puntajes actualizados a todos en la sala
+            io.to(room).emit('updateScores', playerScores[room]);
         } else {
             console.log("Palabra incorrecta: ", textoMensaje);
-            
-            socket.emit('receiveMessage', { text: "Casi, sigue intentando.", sender: 'bot' });
+
+            socket.emit('receiveMessage', { 
+                text: "Casi, sigue intentando.", 
+                sender: 'bot' 
+            });
         }
-        socket.to(socket.request.session.room).emit('receiveMessage', message);
+
+        // Reenviar el mensaje al resto de la sala
+        socket.to(room).emit('receiveMessage', message);
+    });
+
+    // Evento para unirse a una sala
+    socket.on('unirseSala', (data) => {
+        const { codigoSala, nombreJugador } = data;
+
+        if (!codigoSala || !nombreJugador) {
+            console.error('Datos de sala o jugador inválidos');
+            return;
+        }
+
+        socket.request.session.room = codigoSala;
+        socket.request.session.username = nombreJugador;
+        socket.join(codigoSala);
+
+        // Inicializar puntaje del jugador en la sala si no existe
+        if (!playerScores[codigoSala]) playerScores[codigoSala] = {};
+        if (!playerScores[codigoSala][nombreJugador]) playerScores[codigoSala][nombreJugador] = 0;
+
+        // Avisar a la sala sobre el nuevo jugador
+        io.to(codigoSala).emit('playersInRoom', Object.keys(playerScores[codigoSala]));
+        io.to(codigoSala).emit('updateScores', playerScores[codigoSala]);
+
+        console.log(`${nombreJugador} se ha unido a la sala ${codigoSala}`);
     });
     socket.on("palabraAdivinada", (palabraAdivinada) => {
         manejarAdivinanza(palabraAdivinada);
