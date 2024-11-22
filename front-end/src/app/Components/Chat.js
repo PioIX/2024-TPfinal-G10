@@ -1,11 +1,45 @@
-"use client"; 
 import React, { useEffect, useRef, useState } from "react";
 import styles from './Chat.module.css';
+import { useSocket } from "../hooks/useSocket";
 
-export default function Chat({ palabraActual, onCorrectGuess }) {
+export default function Chat({ palabraActual, onCorrectGuess, socket }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const messageEndRef = useRef(null);
+    const [username, setUsername] = useState("");
+    const [points, setPoints] = useState(0);
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const playerName = urlParams.get('username');
+        
+        if (playerName) {
+            setUsername(playerName); 
+        } else {
+            setUsername("Usuario desconocido"); 
+        }
+    }, []); 
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on('receiveMessage', (message) => {
+            console.log('Mensaje recibido del servidor:', message);
+            
+            if (message.text.includes("¡Palabra correcta!")) {
+                setPoints(prevPoints => prevPoints + 100); 
+            }
+    
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                message
+            ]);
+        });
+
+        return () => {
+            socket.off('receiveMessage');
+        };
+    }, [socket]);
 
     const normalizeString = (str) => {
         return str
@@ -29,7 +63,7 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
                 }
             }
 
-            return differences <= 1; // Permitir hasta una letra diferente
+            return differences <= 1; 
         }
         return false;
     };
@@ -40,22 +74,33 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
             const normalizedInput = normalizeString(input.trim());
             const normalizedPalabra = normalizeString(palabraActual);
             let responseMessage = null;
-
+    
             if (normalizedInput === normalizedPalabra) {
-                responseMessage = { text: "¡Palabra correcta! Has ganado 100 puntos.", sender: 'bot', className: styles.correctMessage };
-                onCorrectGuess(); // Pasar 100 puntos a la función
+                responseMessage = { 
+                    text: "¡Palabra correcta! Has ganado 100 puntos.", 
+                    sender: 'bot', 
+                    className: styles.correctMessage 
+                };
+                onCorrectGuess(username);
             } else if (isCasi(normalizedInput, normalizedPalabra)) {
-                responseMessage = { text: "Casi, sigue intentando.", sender: 'bot', className: styles.casiMessage };
+                responseMessage = { 
+                    text: "Casi, sigue intentando.", 
+                    sender: 'bot', 
+                    className: styles.casiMessage 
+                };
             }
-
-            const newMessage = `${localStorage.getItem("username")}: ${input}`;
+            
+            const newMessage = { text: `${username}: ${input}`, sender: 'user' };
+    
+            socket.emit('sendMessage', newMessage, palabraActual); 
+    
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: newMessage, sender: 'user' },
+                newMessage,
                 responseMessage && responseMessage
             ].filter(Boolean));
-
-            setInput("");
+    
+            setInput(""); 
         }
     };
 
@@ -67,7 +112,6 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
 
     return (
         <div className={styles.chatContainer}>
-            <h2 className="text-lg font-bold mb-2">Chat</h2>
             <div className={styles.messageList}>
                 {messages.map((msg, index) => (
                     <div key={index} className={`${styles.message} ${msg.sender === 'user' ? styles.userMessage : msg.className}`}>
@@ -88,7 +132,7 @@ export default function Chat({ palabraActual, onCorrectGuess }) {
                     Enviar
                 </button>
             </form>
-            <h4>Points: {100}</h4>
         </div>
+    
     );
 }

@@ -1,18 +1,35 @@
-"use client";
 import React, { useRef, useEffect, useState } from "react";
 import styles from './PizarronCanvas.module.css';
+import { io } from "socket.io-client";
 
-export default function PizarronCanvas({ clearCanvas, disabled }) {
+const socket = io("http://localhost:4000"); 
+
+export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackground }) {
     const canvasRef = useRef(null);
     const [context, setContext] = useState(null);
     const [drawing, setDrawing] = useState(false);
-    const [currentColor, setCurrentColor] = useState("#000000");
+    const [currentColor, setCurrentColor] = useState("black");
     const [lineWidth, setLineWidth] = useState(3);
     const [actions, setActions] = useState([]);
     const [currentPath, setCurrentPath] = useState([]);
     const [isEraser, setIsEraser] = useState(false);
+    const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
+    const [backgroundChanged, setBackgroundChanged] = useState(false);
+    const [isBackgroundSet, setIsBackgroundSet] = useState(false);
     const [isFilling, setIsFilling] = useState(false);
 
+    useEffect(() => {
+        if (!socket) return;
+        socket.on("clearCanvas", () => {
+            console.log("Turno terminado. Limpiando el lienzo...");
+            clearDrawing(); 
+        });
+    
+        return () => {
+            socket.off("clearCanvas");
+        };
+    }, []);
+    
     useEffect(() => {
         const canvas = canvasRef.current;
         canvas.width = 900;
@@ -21,10 +38,9 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         setContext(ctx);
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
-
-        // Establecer fondo blanco
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     }, []);
 
     useEffect(() => {
@@ -34,31 +50,37 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     }, [clearCanvas]);
 
     useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.ctrlKey && e.key === 'z') {
-                e.preventDefault(); // Evita la acción predeterminada del navegador
-                undoDrawing();
+        const interval = setInterval(() => {
+            if (!disabled) {
+                saveCanvas();
             }
-        };
+        }, 250); 
 
-        window.addEventListener("keydown", handleKeyDown);
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [actions]); // Agregar actions como dependencia para asegurarte de que siempre tenga el estado más reciente
+        return () => clearInterval(interval);
+    }, [actions, disabled]);
 
-    const startDrawing = (e) => {
-        if (disabled) return; // Ignorar si está deshabilitado
-        if (context) {
-            context.beginPath();
-            context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-            setDrawing(true);
-            setCurrentPath([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
+    const changeBackgroundColor = (newColor) => {
+        if (canChangeBackground && !backgroundChanged) {
+            setBackgroundColor(newColor);
+            const ctx = canvasRef.current.getContext("2d");
+            ctx.fillStyle = newColor;
+            ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            setBackgroundChanged(true);
+            setIsBackgroundSet(true);
         }
     };
 
+    const startDrawing = (e) => {
+        if (disabled || !context || !isBackgroundSet) return;
+        context.beginPath();
+        context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+        setDrawing(true);
+        setCurrentPath([{ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
+    };
+
     const draw = (e) => {
-        if (disabled || !drawing || isFilling) return; // Ignorar si está deshabilitado
+        if (!drawing || disabled || !isBackgroundSet) return;
+
         const x = e.nativeEvent.offsetX;
         const y = e.nativeEvent.offsetY;
         smoothDraw(context, x, y);
@@ -69,11 +91,12 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
 
         const lastPoint = currentPath[currentPath.length - 1];
 
-        ctx.strokeStyle = isEraser ? "#FFFFFF" : currentColor;
+        ctx.strokeStyle = isEraser ? backgroundColor : currentColor;
         ctx.lineWidth = isEraser ? lineWidth * 2 : lineWidth;
 
         ctx.beginPath();
         ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.quadraticCurveTo(lastPoint.x, lastPoint.y, (lastPoint.x + x) / 2, (lastPoint.y + y) / 2);
         ctx.lineTo(x, y);
         ctx.stroke();
 
@@ -101,9 +124,11 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
     const redrawCanvas = (actions) => {
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        ctx.fillStyle = "#FFFFFF"; // Vuelve a llenar el fondo blanco
+    
+        ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        actions.forEach(({ path, color, lineWidth }) => {
+    
+        (actions || []).forEach(({ path, color, lineWidth }) => {
             ctx.beginPath();
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
@@ -114,17 +139,58 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
             ctx.stroke();
         });
     };
+    
 
     const clearDrawing = () => {
         setActions([]);
         setCurrentPath([]);
         const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        ctx.fillStyle = "#FFFFFF"; // Rellena el fondo blanco
+        ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        setBackgroundChanged(false);
     };
 
-    const saveCanvas = () => {
+const saveCanvas = () => {
+    const canvasData = {
+        actions,
+        backgroundColor,
+    };
+    socket.emit("saveCanvas", JSON.stringify(canvasData));
+};
+
+socket.on("receiveCanvas", (canvasData) => {
+    if (canvasData) {
+        const parsedData = JSON.parse(canvasData);
+        const { actions: receivedActions, backgroundColor: receivedBackgroundColor } = parsedData;
+
+        setActions(receivedActions);
+        setBackgroundColor(receivedBackgroundColor); 
+        redrawCanvas(receivedActions); 
+    }
+});
+
+
+    const loadCanvas = () => {
+        const savedActions = localStorage.getItem("latestCanvas");
+
+        if (savedActions) {
+            const parsedActions = JSON.parse(savedActions);
+            setActions(parsedActions);
+            redrawCanvas(parsedActions);
+        } else {
+            console.log("No hay datos guardados.");
+        }
+    };
+
+
+    const basicColors = [
+        "#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FFA500", "#800080", "#FFC0CB", "#FFFFFF"
+    ];
+
+    const availableColors = basicColors.filter(color => color !== backgroundColor);
+
+    const downloadCanvasImage = () => {
         const canvas = canvasRef.current;
         const imageData = canvas.toDataURL("image/png");
         const link = document.createElement("a");
@@ -133,179 +199,81 @@ export default function PizarronCanvas({ clearCanvas, disabled }) {
         link.click();
     };
 
-    const fillArea = (x, y) => {
-        if (!isFilling) return;
-
-        const ctx = canvasRef.current.getContext("2d");
-        const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-        const targetColor = [
-            imageData.data[(y * imageData.width + x) * 4],
-            imageData.data[(y * imageData.width + x) * 4 + 1],
-            imageData.data[(y * imageData.width + x) * 4 + 2],
-        ];
-        const fillColor = hexToRgb(currentColor);
-
-        // Comprobar si el color objetivo y el color de relleno son iguales
-        if (
-            targetColor[0] === fillColor.r &&
-            targetColor[1] === fillColor.g &&
-            targetColor[2] === fillColor.b
-        ) {
-            return;
-        }
-
-        const stack = [{ x, y }];
-        const offsets = [
-            { dx: 0, dy: 0 },
-            { dx: 1, dy: 0 },
-            { dx: -1, dy: 0 },
-            { dx: 0, dy: 1 },
-            { dx: 0, dy: -1 },
-            { dx: 1, dy: 1 },
-            { dx: 1, dy: -1 },
-            { dx: -1, dy: 1 },
-            { dx: -1, dy: -1 }
-        ];
-
-        while (stack.length > 0) {
-            const { x: sx, y: sy } = stack.pop();
-            const index = (sy * imageData.width + sx) * 4;
-
-            if (
-                sx < 0 || sx >= imageData.width || sy < 0 || sy >= imageData.height ||
-                imageData.data[index] !== targetColor[0] ||
-                imageData.data[index + 1] !== targetColor[1] ||
-                imageData.data[index + 2] !== targetColor[2]
-            ) continue;
-
-            // Rellenar el píxel
-            imageData.data[index] = fillColor.r;
-            imageData.data[index + 1] = fillColor.g;
-            imageData.data[index + 1] = fillColor.b;
-            imageData.data[index + 3] = 255;
-
-            // Añadir los píxeles vecinos a la pila
-            offsets.forEach(({ dx, dy }) => {
-                stack.push({ x: sx + dx, y: sy + dy });
-            });
-        }
-
-        ctx.putImageData(imageData, 0, 0);
-    };
-
-    const hexToRgb = (hex) => {
-        const bigint = parseInt(hex.slice(1), 16);
-        return {
-            r: (bigint >> 16) & 255,
-            g: (bigint >> 8) & 255,
-            b: bigint & 255,
-        };
-    };
-
-    const colors = ["#000000", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#800080", "#FFA500", "#FFC0CB"];
-
     return (
         <div className={styles.container}>
+            {canChangeBackground && !backgroundChanged && (
+                <div className={styles.backgroundColorSelector}>
+                    <h4>Elige el color de fondo:</h4>
+                    {basicColors.map((color) => (
+                        <button
+                            key={color}
+                            onClick={() => changeBackgroundColor(color)}
+                            style={{ backgroundColor: color, width: 30, height: 30 }}
+                            className={styles.colorButton}
+                        />
+                    ))}
+                </div>
+            )}
             <canvas
                 ref={canvasRef}
                 onMouseDown={startDrawing}
                 onMouseMove={draw}
                 onMouseUp={finishDrawing}
                 onMouseOut={finishDrawing}
-                onClick={(e) => {
-                    const rect = canvasRef.current.getBoundingClientRect();
-                    fillArea(
-                        Math.floor(e.clientX - rect.left),
-                        Math.floor(e.clientY - rect.top)
-                    );
-                }}
                 className={styles.canvas}
-                style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }} // Cambiar el cursor si está deshabilitado
+                style={{ cursor: disabled ? 'not-allowed' : 'crosshair' }}
             />
             <div className={styles.controls}>
-                {colors.map(color => (
+                {availableColors.map((color) => (
                     <button
                         key={color}
                         onClick={() => {
-                            if (!disabled) { // Solo cambiar si no está deshabilitado
-                                setIsEraser(false);
-                                setCurrentColor(color);
-                            }
+                            setIsEraser(false);
+                            setCurrentColor(color);
                         }}
                         className={styles.colorButton}
                         style={{ backgroundColor: color }}
-                        disabled={disabled} // Deshabilitar el botón si es necesario
                     />
                 ))}
                 <input
                     type="color"
                     value={currentColor}
-                    onChange={(e) => {
-                        if (!disabled) { // Solo cambiar si no está deshabilitado
-                            setIsEraser(false);
-                            setCurrentColor(e.target.value);
-                        }
-                    }}
-                    className={styles.colorInput}
-                    disabled={disabled} // Deshabilitar el input si es necesario
+                    onChange={(e) => setCurrentColor(e.target.value)}
+                    className={styles.colorPicker}
                 />
                 <input
                     type="range"
                     min="1"
-                    max="10"
+                    max="150"
                     value={lineWidth}
-                    onChange={(e) => {
-                        if (!disabled) { // Solo cambiar si no está deshabilitado
-                            setLineWidth(e.target.value);
-                        }
-                    }}
+                    onChange={(e) => setLineWidth(e.target.value)}
                     className={styles.rangeInput}
-                    disabled={disabled} // Deshabilitar el input si es necesario
                 />
                 <button
                     onClick={() => {
-                        if (!disabled) { // Solo cambiar si no está deshabilitado
-                            setIsEraser(!isEraser);
-                            if (isEraser) {
-                                setCurrentColor("#000000"); // Cambia el color a negro al desactivar la goma
-                            } else {
-                                setCurrentColor(currentColor); // Mantiene el color actual si se activa la goma
-                            }
+                        setIsEraser(!isEraser);
+                        if (!isEraser) {
+                            setCurrentColor(backgroundColor);
                         }
                     }}
                     className={styles.eraserButton}
-                    disabled={disabled} // Deshabilitar el botón si es necesario
                 >
+                    
                     {isEraser ? "Usar lápiz" : "Usar goma"}
-                </button>
-                <button
-                    onClick={() => {
-                        if (!disabled) { // Solo cambiar si no está deshabilitado
-                            setIsFilling((prev) => {
-                                if (prev) {
-                                    setCurrentColor("#000000");
-                                }
-                                return !prev;
-                            });
-                        }
-                    }}
-                    className={styles.fillButton}
-                    disabled={disabled} // Deshabilitar el botón si es necesario
-                >
-                    {isFilling ? "Desactivar Rellenar" : "Activar Rellenar"}
                 </button>
             </div>
             <div className={styles.actionButtons}>
-                <button className={styles.undoButton} onClick={undoDrawing} disabled={disabled}>
+                <button className={styles.undoButton} onClick={undoDrawing}>
                     Volver
                 </button>
-                <button className={styles.clearButton} onClick={clearDrawing} disabled={disabled}>
+                <button className={styles.clearButton} onClick={clearDrawing}>
                     Borrar
                 </button>
-                <button onClick={saveCanvas} className={styles.saveButton} disabled={disabled}>
-                    Guardar
+                <button onClick={downloadCanvasImage} className={styles.saveButton} disabled={disabled}>
+                    Descargar
                 </button>
             </div>
         </div>
     );
 }
+
