@@ -39,6 +39,16 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         }
     }, [clearCanvas]);
 
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (!disabled) {
+                saveCanvas();
+            }
+        }, 2000); // Cada 2 segundos
+
+        return () => clearInterval(interval);
+    }, [actions, disabled]);
+
     const changeBackgroundColor = (newColor) => {
         if (canChangeBackground && !backgroundChanged) {
             setBackgroundColor(newColor);
@@ -131,10 +141,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
     };
 
     const saveCanvas = () => {
-        // Guarda el lienzo en el localStorage
-        localStorage.setItem("latestCanvas", JSON.stringify(actions));
-        alert("Lienzo guardado!");
-
         // Enviar el lienzo al servidor para compartirlo con otros usuarios
         socket.emit("saveCanvas", JSON.stringify(actions));
     };
@@ -237,21 +243,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                 >
                     {isEraser ? "Usar lápiz" : "Usar goma"}
                 </button>
-                <button
-                    onClick={() => {
-                        if (!disabled) {
-                            setIsFilling((prev) => {
-                                if (prev) {
-                                    setCurrentColor("#000000");
-                                }
-                                return !prev;
-                            });
-                        }
-                    }}
-                    className={styles.fillButton}
-                    disabled={disabled}
-                >
-                </button>
             </div>
             <div className={styles.actionButtons}>
                 <button className={styles.undoButton} onClick={undoDrawing}>
@@ -259,9 +250,6 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
                 </button>
                 <button className={styles.clearButton} onClick={clearDrawing}>
                     Borrar
-                </button>
-                <button onClick={saveCanvas} className={styles.saveButton}>
-                    Guardar
                 </button>
                 <button onClick={loadCanvas} className={styles.loadButton}>
                     Cargar
@@ -273,3 +261,4 @@ export default function PizarronCanvas({ clearCanvas, disabled, canChangeBackgro
         </div>
     );
 }
+
