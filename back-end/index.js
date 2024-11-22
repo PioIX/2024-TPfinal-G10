@@ -340,3 +340,18 @@ io.on('connection', (socket) => {
         }
     });
 }); */
+
+
+io.on("connection", (socket) => {
+    console.log("Nuevo usuario conectado:", socket.id);
+
+    // Escuchar cuando un usuario guarda el lienzo y retransmitirlo a los demás
+    socket.on("saveCanvas", (canvasData) => {
+        // Puedes usar `socket.broadcast.emit` para enviarlo a todos los demás excepto al que envió
+        socket.broadcast.emit("receiveCanvas", canvasData);
+    });
+
+    socket.on("disconnect", () => {
+        console.log("Usuario desconectado:", socket.id);
+    });
+});
